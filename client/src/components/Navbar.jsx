@@ -1,0 +1,187 @@
+import React, { useState, useEffect, useRef } from 'react';
+
+function Navbar({ isLoggedIn, role, onLogout }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef(null);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsOpen(false);
+      }
+    }
+    
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
+  // Dynamic Links based on Role
+  const getRoleLinks = () => {
+    switch (role) {
+      case 'Member':
+        return [
+          { path: '/dashboard', label: 'Dashboard' },
+          { path: '/workouts', label: 'My Workouts' },
+          { path: '/profile', label: 'Profile' },
+        ];
+      case 'Trainer':
+        return [
+          { path: '/trainer/dashboard', label: 'Trainer Panel' },
+          { path: '/clients', label: 'Manage Clients' },
+          { path: '/profile', label: 'Profile' },
+        ];
+      case 'Admin':
+        return [
+          { path: '/admin/dashboard', label: 'Admin Dashboard' },
+          { path: '/manage-users', label: 'Manage Users' },
+          { path: '/profile', label: 'Profile' },
+        ];
+      default:
+        return [];
+    }
+  };
+
+  return (
+    <nav className="fixed top-0 left-0 right-0 z-50 w-full bg-gray-900 text-white shadow-lg">
+      <div className="container mx-auto px-6">
+        <div className="flex items-center h-16">
+          
+          {/* Logo - Far Left */}
+          <div className="mr-auto">
+            <a href="/" className="flex items-center">
+              <div className="w-8 h-8 mr-2" style={{backgroundImage: 'url("/Logo.svg")'}}></div>
+              <span className="text-xl font-bold text-blue-400">FitSync</span>
+            </a>
+          </div>
+          
+          {/* Navigation Links - True Center */}
+          <div className="hidden md:flex items-center justify-center absolute left-0 right-0 mx-auto" style={{ width: 'fit-content' }}>
+            <ul className="flex space-x-6">
+              <li><a href="/" className="text-gray-300 hover:text-white transition-colors duration-200 font-medium">Home</a></li>
+              <li><a href="/about" className="text-gray-300 hover:text-white transition-colors duration-200 font-medium">About</a></li>
+              <li><a href="/services" className="text-gray-300 hover:text-white transition-colors duration-200 font-medium">Services</a></li>
+              <li><a href="/equipments" className="text-gray-300 hover:text-white transition-colors duration-200 font-medium">Equipments</a></li>
+              <li><a href="/plans" className="text-gray-300 hover:text-white transition-colors duration-200 font-medium">Plans</a></li>
+              <li><a href="/support" className="text-gray-300 hover:text-white transition-colors duration-200 font-medium">Support</a></li>
+              <li><a href="/contact" className="text-gray-300 hover:text-white transition-colors duration-200 font-medium">Contact</a></li>
+            </ul>
+          </div>
+          
+          {/* Auth Buttons - Far Right */}
+          <div className="hidden md:flex items-center ml-auto">
+            {!isLoggedIn ? (
+              <>
+                <a href="/login" className="px-4 py-2 text-sm font-medium text-gray-200 hover:text-white transition-colors duration-200">Login</a>
+                <a href="/register" className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 transition-colors duration-200 ml-2">Become a Member</a>
+              </>
+            ) : (
+              <div className="flex items-center">
+                <div className="relative group">
+                  <button className="flex items-center px-3 py-2 text-sm font-medium text-white bg-gray-800 rounded-md hover:bg-gray-700 transition-colors duration-200">
+                    <span>My Account</span>
+                    <svg className="w-5 h-5 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path>
+                    </svg>
+                  </button>
+                  <div className="absolute right-0 z-10 mt-2 w-48 bg-white rounded-md shadow-lg py-1 hidden group-hover:block">
+                    {getRoleLinks().map((link) => (
+                      <a key={link.path} href={link.path} className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                        {link.label}
+                      </a>
+                    ))}
+                    <button 
+                      onClick={onLogout} 
+                      className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
+                    >
+                      Logout
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+          
+          {/* Mobile menu button - Only visible on mobile */}
+          <div className="md:hidden ml-auto">
+            <button
+              onClick={() => setIsOpen(!isOpen)}
+              className="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-white hover:bg-gray-700 focus:outline-none"
+              aria-expanded={isOpen}
+            >
+              <span className="sr-only">Open main menu</span>
+              {/* Icon when menu is closed */}
+              <svg 
+                className={`${isOpen ? 'hidden' : 'block'} h-6 w-6`}
+                xmlns="http://www.w3.org/2000/svg" 
+                fill="none" 
+                viewBox="0 0 24 24" 
+                stroke="currentColor" 
+                aria-hidden="true"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+              {/* Icon when menu is open */}
+              <svg 
+                className={`${isOpen ? 'block' : 'hidden'} h-6 w-6`}
+                xmlns="http://www.w3.org/2000/svg" 
+                fill="none" 
+                viewBox="0 0 24 24" 
+                stroke="currentColor" 
+                aria-hidden="true"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Mobile menu, show/hide based on menu state. */}
+      <div className={`${isOpen ? 'block' : 'hidden'} md:hidden`} ref={dropdownRef}>
+        <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 bg-gray-800">
+          <a href="/" className="block px-3 py-2 rounded-md text-base font-medium text-white hover:bg-gray-700">Home</a>
+          <a href="/about" className="block px-3 py-2 rounded-md text-base font-medium text-white hover:bg-gray-700">About</a>
+          <a href="/services" className="block px-3 py-2 rounded-md text-base font-medium text-white hover:bg-gray-700">Services</a>
+          <a href="/equipments" className="block px-3 py-2 rounded-md text-base font-medium text-white hover:bg-gray-700">Equipments</a>
+          <a href="/plans" className="block px-3 py-2 rounded-md text-base font-medium text-white hover:bg-gray-700">Plans</a>
+          <a href="/support" className="block px-3 py-2 rounded-md text-base font-medium text-white hover:bg-gray-700">Support</a>
+          <a href="/contact" className="block px-3 py-2 rounded-md text-base font-medium text-white hover:bg-gray-700">Contact</a>
+        </div>
+        <div className="pt-4 pb-3 border-t border-gray-700">
+          {!isLoggedIn ? (
+            <div className="px-2 space-y-1">
+              <a href="/login" className="block px-3 py-2 rounded-md text-base font-medium text-white bg-gray-700 hover:bg-gray-600">Login</a>
+              <a href="/register" className="block px-3 py-2 rounded-md text-base font-medium text-white bg-blue-600 hover:bg-blue-700">Become a Member</a>
+            </div>
+          ) : (
+            <div className="px-2 space-y-1">
+              <div className="px-3 py-2 text-base font-bold text-gray-400">
+                {role} Account
+              </div>
+              {getRoleLinks().map((link) => (
+                <a 
+                  key={link.path} 
+                  href={link.path} 
+                  className="block px-3 py-2 rounded-md text-base font-medium text-white hover:bg-gray-700"
+                >
+                  {link.label}
+                </a>
+              ))}
+              <button 
+                onClick={onLogout}
+                className="w-full text-left block px-3 py-2 rounded-md text-base font-medium text-white bg-red-600 hover:bg-red-700"
+              >
+                Logout
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    </nav>
+  );
+}
+
+export default Navbar;
