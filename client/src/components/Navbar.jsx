@@ -80,22 +80,35 @@ function Navbar({ isLoggedIn, role, onLogout }) {
             ) : (
               <div className="flex items-center">
                 <div className="relative group">
-                  <button className="flex items-center px-3 py-2 text-sm font-medium text-white bg-gray-800 rounded-md hover:bg-gray-700 transition-colors duration-200">
+                  <button className="flex items-center px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-gray-800 to-gray-700 rounded-md hover:from-gray-700 hover:to-gray-600 transition-all duration-300 shadow-md">
+                    <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                    </svg>
                     <span>My Account</span>
-                    <svg className="w-5 h-5 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path>
+                    <svg className="w-4 h-4 ml-2 transition-transform duration-200 group-hover:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
                     </svg>
                   </button>
-                  <div className="absolute right-0 z-10 mt-2 w-48 bg-white rounded-md shadow-lg py-1 hidden group-hover:block">
+                  <div className="absolute right-0 z-10 mt-2 w-56 origin-top-right bg-white rounded-lg shadow-xl py-1 hidden group-hover:block border border-gray-100 transform transition-all duration-200">
+                    <div className="px-4 py-2 border-b border-gray-100">
+                      <span className="text-sm font-semibold text-gray-900">Welcome!</span>
+                      <span className="block text-xs text-gray-500 mt-0.5">{role} Account</span>
+                    </div>
                     {getRoleLinks().map((link) => (
-                      <a key={link.path} href={link.path} className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                      <a 
+                        key={link.path} 
+                        href={link.path} 
+                        className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-blue-600 transition-colors duration-200"
+                      >
+                        <span className="w-8">{link.label === 'Dashboard' ? '📊' : link.label === 'Profile' ? '👤' : '📋'}</span>
                         {link.label}
                       </a>
                     ))}
                     <button 
                       onClick={onLogout} 
-                      className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
+                      className="flex items-center w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors duration-200 border-t border-gray-100"
                     >
+                      <span className="w-8">🚪</span>
                       Logout
                     </button>
                   </div>
