@@ -117,12 +117,6 @@ router.post('/register', validate(userSchema), async (req, res, next) => {
   }
 });
 
-/* BACKEND DEVELOPER 2
- * Responsible for:
- * - User verification
- * - Session management
- * - Error handling
- */
 
 // CREATE - User login and token generation
 router.post('/login', authLimiter, async (req, res, next) => {
