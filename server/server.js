@@ -14,7 +14,7 @@ const app = express();
 
 // Enhanced CORS configuration
 app.use(cors({
-  origin: 'http://localhost:5173', // Vite's default port
+  origin: ['http://localhost:5173', 'https://fitsync-n7ft.onrender.com'],// Vite's default port
   credentials: true
 }));
 app.use(express.json());
