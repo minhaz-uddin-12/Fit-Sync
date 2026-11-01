@@ -1,70 +1,55 @@
-import React from "react";
+import { Link } from "react-router-dom";
+import { FaArrowRight } from "react-icons/fa";
+import { PageHeader, SectionHeading } from "../components/ui/Section";
+import { ServiceCard } from "../components/Services";
+import { services } from "../data/site";
+
+const steps = [
+  { title: "Assess", desc: "Start with a BMI check and a goal-setting consultation with a coach." },
+  { title: "Plan", desc: "Get a training and nutrition plan matched to your schedule." },
+  { title: "Train", desc: "Work with coaches and classes that keep you consistent." },
+  { title: "Track", desc: "Log workouts and watch your progress build week after week." },
+];
 
 function Services() {
-  const services = [
-    {
-      title: "Personal Training",
-      desc: "Get 1-on-1 coaching from certified trainers to accelerate your fitness journey.",
-      icon: "🏋️",
-      extraInfo: "Customized workout plans tailored to your goals and lifestyle."
-    },
-    {
-      title: "Group Workouts",
-      desc: "Join dynamic group sessions for motivation, fun, and community support.",
-      icon: "🤸",
-      extraInfo: "Stay inspired by working out with like-minded fitness enthusiasts."
-    },
-    {
-      title: "Diet Plans",
-      desc: "Personalized nutrition plans to enhance your fitness outcomes.",
-      icon: "🥗",
-      extraInfo: "Balanced, effective meal plans tailored to your fitness goals."
-    },
-    {
-      title: "Yoga & Meditation",
-      desc: "Enhance your flexibility, mindfulness, and inner peace.",
-      icon: "🧘‍♀️",
-      extraInfo: "Designed to reduce stress and promote holistic well-being."
-    },
-    {
-      title: "Weight Loss Coaching",
-      desc: "Effective strategies and ongoing support to help you lose weight sustainably.",
-      icon: "⚖️",
-      extraInfo: "Personalized coaching to ensure long-term success."
-    },
-    {
-      title: "Sports Conditioning",
-      desc: "Improve strength, agility, and endurance for peak athletic performance.",
-      icon: "🏃‍♂️",
-      extraInfo: "Ideal for athletes looking to elevate their competitive edge."
-    },
-  ];
-
   return (
-    <section className="bg-gradient-to-br from-gray-50 to-gray-200 text-center relative overflow-hidden py-[56px] mt-[56px]">
-      <div className="absolute inset-0 bg-gradient-to-br from-gray-300 to-gray-400 opacity-20 blur-3xl"></div>
-      
-      <div className="max-w-7xl mx-auto px-8 relative z-10">
-        <h2 className="text-5xl font-extrabold text-gray-800 mb-8 drop-shadow-md">Our Services</h2>
-        <p className="text-lg text-gray-600 max-w-3xl mx-auto mb-16">
-          Explore our professional services tailored to support your fitness journey. From personalized training to specialized coaching, we've got you covered.
-        </p>
+    <>
+      <PageHeader
+        eyebrow="Services"
+        title="Everything you need to reach your goals"
+        description="Professional coaching and programs designed to support every stage of your fitness journey."
+        image="/Cardio.jpg"
+      />
 
-        <div className="grid gap-12 sm:grid-cols-2 lg:grid-cols-3">
-          {services.map((service, index) => (
-            <div
-              key={index}
-              className="bg-white p-10 rounded-3xl shadow-xl transform transition-transform duration-300 hover:scale-105 hover:shadow-2xl flex flex-col items-center text-center"
-            >
-              <div className="text-7xl mb-6">{service.icon}</div>
-              <h3 className="text-3xl font-semibold text-gray-800 mb-4">{service.title}</h3>
-              <p className="text-gray-600 mb-4">{service.desc}</p>
-              <p className="text-gray-500 italic">{service.extraInfo}</p>
-            </div>
+      <section className="section">
+        <div className="container-x grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          {services.map((service, i) => (
+            <ServiceCard key={service.title} service={service} index={i} detailed />
           ))}
         </div>
-      </div>
-    </section>
+      </section>
+
+      <section className="section bg-ink-900">
+        <div className="container-x">
+          <SectionHeading eyebrow="How it works" title="Four steps to a stronger you" />
+          <ol className="mt-14 grid gap-6 md:grid-cols-4">
+            {steps.map((step, i) => (
+              <li key={step.title} className="relative border-t-2 border-white/10 pt-6">
+                <span className="absolute -top-[2px] left-0 h-0.5 w-12 bg-brand-500" />
+                <span className="font-display text-5xl font-bold text-white/10">0{i + 1}</span>
+                <h3 className="mt-2 font-display text-2xl font-semibold uppercase">{step.title}</h3>
+                <p className="mt-2 text-sm leading-relaxed text-zinc-400">{step.desc}</p>
+              </li>
+            ))}
+          </ol>
+          <div className="mt-14 flex justify-center">
+            <Link to="/plans" className="btn-primary">
+              View membership plans <FaArrowRight className="h-3 w-3" />
+            </Link>
+          </div>
+        </div>
+      </section>
+    </>
   );
 }
 

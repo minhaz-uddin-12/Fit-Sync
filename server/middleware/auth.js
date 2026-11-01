@@ -6,50 +6,44 @@
  */
 
 import jwt from 'jsonwebtoken';
-import User from '../models/User.js';
+import { getUserWithMembership, publicUser } from '../db/users.js';
+
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export const authenticate = async (req, res, next) => {
-  try {
-    // Get token from header
-    const token = req.headers.authorization?.split(' ')[1];
-    
-    if (!token) {
-      return res.status(401).json({ message: 'Authentication required' });
-    }
-
-    // Verify token with explicit algorithm
-    const decoded = jwt.verify(token, process.env.JWT_SECRET, {
-      algorithms: ['HS256']
-    });
-
-    // Check if user still exists
-    const user = await User.findById(decoded.userId).select('-password');
-    if (!user) {
-      return res.status(401).json({ message: 'Invalid token' });
-    }
-
-    // Attach user to request
-    req.user = user;
-    next();
-  } catch (error) {
-    if (error.name === 'JsonWebTokenError') {
-      return res.status(401).json({ message: 'Invalid token' });
-    }
-    if (error.name === 'TokenExpiredError') {
-      return res.status(401).json({ message: 'Token expired' });
-    }
-    next(error);
+  const token = req.headers.authorization?.split(' ')[1];
+  if (!token) {
+    return res.status(401).json({ status: 'error', message: 'Please log in to continue' });
   }
+
+  let decoded;
+  try {
+    decoded = jwt.verify(token, process.env.JWT_SECRET, { algorithms: ['HS256'] });
+  } catch (error) {
+    const message = error.name === 'TokenExpiredError'
+      ? 'Your session has expired. Please log in again.'
+      : 'Invalid session. Please log in again.';
+    return res.status(401).json({ status: 'error', message });
+  }
+
+  // Check the user still exists (and pick up role changes).
+  // Tokens issued before the move to PostgreSQL carry a non-UUID id.
+  const row = UUID.test(decoded.userId) && await getUserWithMembership(decoded.userId);
+  if (!row) {
+    return res.status(401).json({ status: 'error', message: 'Your account no longer exists' });
+  }
+
+  req.userRow = row.user;
+  req.user = publicUser(row.user, row.membership);
+  next();
 };
 
-// Optional: Role-based authorization middleware
-export const authorize = (...roles) => {
-  return (req, res, next) => {
-    if (!roles.includes(req.user.role)) {
-      return res.status(403).json({ 
-        message: 'Not authorized to access this resource' 
-      });
-    }
-    next();
-  };
+export const authorize = (...roles) => (req, res, next) => {
+  if (!roles.includes(req.user.role)) {
+    return res.status(403).json({
+      status: 'error',
+      message: 'You do not have permission to do this'
+    });
+  }
+  next();
 };

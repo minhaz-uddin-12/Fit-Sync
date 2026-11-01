@@ -1,5 +1,21 @@
-import React, { useState } from "react";
-import GaugeChart from 'react-gauge-chart';
+import { useState } from "react";
+import { Link } from "react-router-dom";
+import { motion } from "framer-motion";
+import { FaMars, FaVenus, FaCalculator, FaArrowRight, FaInfoCircle } from "react-icons/fa";
+import { PageHeader } from "../components/ui/Section";
+import { useNotification } from "../contexts/NotificationContext";
+
+// Status steps (validated for the dark surface); each segment is always labeled.
+const SCALE_MIN = 15;
+const SCALE_MAX = 40;
+const ranges = [
+  { name: "Underweight", short: "Under", from: 15, to: 18.5, color: "#3987e5", text: "text-[#6da7ec]" },
+  { name: "Normal weight", short: "Normal", from: 18.5, to: 25, color: "#0ca30c", text: "text-[#3fc43f]" },
+  { name: "Overweight", short: "Over", from: 25, to: 30, color: "#fab219", text: "text-[#fab219]" },
+  { name: "Obese", short: "Obese", from: 30, to: 40, color: "#d03b3b", text: "text-[#e66767]" },
+];
+
+const pct = (v) => ((Math.min(Math.max(v, SCALE_MIN), SCALE_MAX) - SCALE_MIN) / (SCALE_MAX - SCALE_MIN)) * 100;
 
 function BMICalculator() {
   const [weight, setWeight] = useState("");
@@ -10,17 +26,17 @@ function BMICalculator() {
   const [category, setCategory] = useState("");
   const [advice, setAdvice] = useState("");
   const [isCalculating, setIsCalculating] = useState(false);
+  const { showNotification } = useNotification();
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    setIsCalculating(true);
 
     if (!weight || !height || !age) {
-      alert("Please enter weight, height, and age.");
-      setIsCalculating(false);
+      showNotification("Please enter weight, height, and age.", "error");
       return;
     }
 
+    setIsCalculating(true);
     // Simulate calculation delay for better UX
     setTimeout(() => {
       const heightInMeters = height / 100;
@@ -51,12 +67,12 @@ function BMICalculator() {
         category: "Underweight",
         advice: "Consider eating a balanced diet with more protein and healthy fats to reach a normal weight.",
       };
-    } else if (bmiValue >= 18.5 && bmiValue < 24.9) {
+    } else if (bmiValue < 25) {
       return {
         category: "Normal weight",
         advice: "Great job! Maintain a healthy lifestyle with a balanced diet and regular exercise.",
       };
-    } else if (bmiValue >= 25 && bmiValue < 29.9) {
+    } else if (bmiValue < 30) {
       return {
         category: "Overweight",
         advice: "Consider a healthy diet and increased physical activity to reduce excess weight.",
@@ -69,185 +85,167 @@ function BMICalculator() {
     }
   };
 
-  const getGaugeValue = (bmiValue) => {
-    if (bmiValue < 15) return 0;
-    if (bmiValue > 40) return 1;
-    return (bmiValue - 15) / (40 - 15);
-  };
+  const current = ranges.find((r) => r.name === category);
 
-  const getCategoryColor = (categoryName) => {
-    switch(categoryName) {
-      case "Underweight": return "text-blue-600";
-      case "Normal weight": return "text-green-600";
-      case "Overweight": return "text-yellow-600";
-      case "Obese": return "text-red-600";
-      default: return "text-indigo-700";
-    }
-  };
+  const genderOption = (value, label, Icon) => (
+    <button
+      type="button"
+      onClick={() => setGender(value)}
+      aria-pressed={gender === value}
+      className={`flex flex-1 items-center justify-center gap-2 rounded-xl border px-4 py-3 text-sm font-medium transition ${
+        gender === value
+          ? "border-brand-500 bg-brand-500/10 text-white"
+          : "border-white/10 bg-ink-900 text-zinc-400 hover:border-white/20"
+      }`}
+    >
+      <Icon className={gender === value ? "text-brand-400" : ""} /> {label}
+    </button>
+  );
 
   return (
-    <section className="py-20 bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
-      <div className="max-w-5xl mx-auto px-6">
-        <div className="text-center mb-12">
-          <h2 className="text-4xl font-bold text-gray-800 mb-3">BMI Health <span className="text-indigo-600">Calculator</span></h2>
-          <p className="text-gray-600 max-w-2xl mx-auto">Calculate your Body Mass Index (BMI) to determine if you're at a healthy weight for your height and get personalized recommendations.</p>
-        </div>
+    <>
+      <PageHeader
+        eyebrow="Health tools"
+        title="BMI calculator"
+        description="Calculate your Body Mass Index to see where you stand and get a personalized recommendation."
+      />
 
-        <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
-          <div className="flex flex-col md:flex-row">
-            {/* Form Section */}
-            <div className="md:w-1/2 p-8 md:p-12 bg-white">
-              <h3 className="text-2xl font-bold text-gray-800 mb-6">Enter Your Details</h3>
-              <form onSubmit={handleSubmit} className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Gender</label>
-                    <div className="flex space-x-4">
-                      <div 
-                        className={`flex-1 py-3 px-4 rounded-lg border ${gender === 'male' ? 'border-indigo-500 bg-indigo-50' : 'border-gray-300'} cursor-pointer transition-all`}
-                        onClick={() => setGender('male')}
-                      >
-                        <div className="flex items-center justify-center">
-                          <span className={`font-medium ${gender === 'male' ? 'text-indigo-700' : 'text-gray-600'}`}>Male</span>
-                        </div>
-                      </div>
-                      <div 
-                        className={`flex-1 py-3 px-4 rounded-lg border ${gender === 'female' ? 'border-indigo-500 bg-indigo-50' : 'border-gray-300'} cursor-pointer transition-all`}
-                        onClick={() => setGender('female')}
-                      >
-                        <div className="flex items-center justify-center">
-                          <span className={`font-medium ${gender === 'female' ? 'text-indigo-700' : 'text-gray-600'}`}>Female</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Age (years)</label>
-                    <input
-                      type="number"
-                      value={age}
-                      onChange={(e) => setAge(e.target.value)}
-                      className="w-full py-3 px-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
-                      placeholder="Enter your age"
-                      required
-                    />
-                  </div>
+      <section className="section pt-16">
+        <div className="container-x grid gap-6 lg:grid-cols-2">
+          <div className="card p-8 sm:p-10">
+            <h2 className="font-display text-3xl font-bold uppercase">Your details</h2>
+            <form onSubmit={handleSubmit} className="mt-8 space-y-6">
+              <div>
+                <span className="label">Gender</span>
+                <div className="flex gap-3">
+                  {genderOption("male", "Male", FaMars)}
+                  {genderOption("female", "Female", FaVenus)}
                 </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Weight (kg)</label>
-                    <input
-                      type="number"
-                      value={weight}
-                      onChange={(e) => setWeight(e.target.value)}
-                      className="w-full py-3 px-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
-                      placeholder="Enter your weight"
-                      required
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Height (cm)</label>
-                    <input
-                      type="number"
-                      value={height}
-                      onChange={(e) => setHeight(e.target.value)}
-                      className="w-full py-3 px-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
-                      placeholder="Enter your height"
-                      required
-                    />
-                  </div>
-                </div>
-
-                <button
-                  type="submit"
-                  disabled={isCalculating}
-                  className="w-full py-3 px-6 bg-indigo-600 text-white text-lg font-medium rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-all shadow-md disabled:opacity-70"
-                >
-                  {isCalculating ? 'Calculating...' : 'Calculate BMI'}
-                </button>
-              </form>
-
-              <div className="mt-8">
-                <p className="text-xs text-gray-500">
-                  Note: This calculator provides an estimate and should not replace medical advice. BMI doesn't differentiate between muscle and fat, and factors like muscle mass can affect results.
-                </p>
               </div>
-            </div>
 
-            {/* Results Section */}
-            <div className="md:w-1/2 p-8 md:p-12 bg-gradient-to-br from-indigo-50 to-purple-100 flex items-center justify-center">
-              {bmi ? (
-                <div className="flex flex-col items-center max-w-sm">
-                  <div className="w-64 h-64">
-                    <GaugeChart
-                      id="bmi-gauge-chart"
-                      nrOfLevels={30}
-                      colors={['#3b82f6', '#10b981', '#f59e0b', '#ef4444']}
-                      arcWidth={0.3}
-                      percent={getGaugeValue(parseFloat(bmi))}
-                      textColor="#4338ca"
-                      needleColor="#4338ca"
-                      needleBaseColor="#4338ca"
-                      hideText={true}
-                      cornerRadius={6}
-                      animDelay={0}
-                      animate={true}
+              <div className="grid gap-5 sm:grid-cols-3">
+                {[
+                  { id: "age", label: "Age", unit: "yrs", value: age, set: setAge, placeholder: "25" },
+                  { id: "weight", label: "Weight", unit: "kg", value: weight, set: setWeight, placeholder: "70" },
+                  { id: "height", label: "Height", unit: "cm", value: height, set: setHeight, placeholder: "175" },
+                ].map((f) => (
+                  <div key={f.id}>
+                    <label htmlFor={f.id} className="label">{f.label}</label>
+                    <div className="relative">
+                      <input
+                        id={f.id}
+                        type="number"
+                        min="1"
+                        value={f.value}
+                        onChange={(e) => f.set(e.target.value)}
+                        className="input pr-12"
+                        placeholder={f.placeholder}
+                        required
+                      />
+                      <span className="pointer-events-none absolute inset-y-0 right-4 flex items-center text-xs text-zinc-500">
+                        {f.unit}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <button type="submit" disabled={isCalculating} className="btn-primary w-full py-3.5">
+                <FaCalculator className="h-3.5 w-3.5" />
+                {isCalculating ? "Calculating…" : "Calculate BMI"}
+              </button>
+            </form>
+
+            <p className="mt-8 flex gap-3 rounded-xl bg-white/[0.03] p-4 text-xs leading-relaxed text-zinc-500">
+              <FaInfoCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+              This calculator provides an estimate and does not replace medical advice. BMI doesn&apos;t
+              distinguish between muscle and fat.
+            </p>
+          </div>
+
+          <div className="card flex flex-col p-8 sm:p-10">
+            <h2 className="font-display text-3xl font-bold uppercase">Your result</h2>
+
+            {bmi ? (
+              <motion.div
+                key={bmi}
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="mt-8 flex flex-1 flex-col"
+              >
+                <div className="flex items-end gap-4">
+                  <span className="font-display text-8xl font-bold leading-none text-white">{bmi}</span>
+                  <span className="pb-2">
+                    <span className="block text-xs uppercase tracking-widest text-zinc-500">BMI</span>
+                    <span className={`block text-lg font-semibold ${current?.text}`}>{category}</span>
+                  </span>
+                </div>
+
+                <div className="mt-10" role="img" aria-label={`BMI ${bmi}, ${category}`}>
+                  <div className="relative">
+                    <div className="flex h-3 gap-[2px] overflow-hidden rounded-full">
+                      {ranges.map((r) => (
+                        <div
+                          key={r.name}
+                          style={{ width: `${pct(r.to) - pct(r.from)}%`, backgroundColor: r.color }}
+                          className={`h-full transition-opacity ${r.name === category ? "opacity-100" : "opacity-30"}`}
+                        />
+                      ))}
+                    </div>
+                    <motion.div
+                      initial={{ left: "0%" }}
+                      animate={{ left: `${pct(parseFloat(bmi))}%` }}
+                      transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+                      className="absolute -top-1.5 h-6 w-1.5 -translate-x-1/2 rounded-full bg-white ring-2 ring-ink-850"
                     />
                   </div>
-                  
-                  <div className="mt-4 text-center">
-                    <div className="inline-block bg-white px-6 py-3 rounded-full shadow-md mb-4">
-                      <span className="text-gray-600 font-medium">Your BMI</span>
-                      <h3 className="text-3xl font-bold text-indigo-700">{bmi}</h3>
-                    </div>
-                    
-                    <div className="bg-white p-6 rounded-xl shadow-md">
-                      <p className="text-lg font-semibold mb-2">
-                        Category: <span className={getCategoryColor(category)}>{category}</span>
-                      </p>
-                      <p className="text-gray-600">{advice}</p>
-                      
-                      <div className="mt-4 pt-4 border-t border-gray-200">
-                        <h4 className="text-sm font-medium text-gray-700 mb-2">BMI Categories:</h4>
-                        <div className="grid grid-cols-2 gap-2 text-xs">
-                          <div className="flex items-center">
-                            <div className="w-3 h-3 rounded-full bg-blue-500 mr-2"></div>
-                            <span>Underweight: &lt;18.5</span>
-                          </div>
-                          <div className="flex items-center">
-                            <div className="w-3 h-3 rounded-full bg-green-500 mr-2"></div>
-                            <span>Normal: 18.5-24.9</span>
-                          </div>
-                          <div className="flex items-center">
-                            <div className="w-3 h-3 rounded-full bg-yellow-500 mr-2"></div>
-                            <span>Overweight: 25-29.9</span>
-                          </div>
-                          <div className="flex items-center">
-                            <div className="w-3 h-3 rounded-full bg-red-500 mr-2"></div>
-                            <span>Obese: &gt;30</span>
-                          </div>
-                        </div>
+                  <div className="mt-3 flex text-[11px] text-zinc-500">
+                    {ranges.map((r) => (
+                      <div key={r.name} style={{ width: `${pct(r.to) - pct(r.from)}%` }} className="truncate">
+                        <span className={r.name === category ? "font-semibold text-zinc-200" : ""}>{r.short}</span>
+                        <span className="block tabular-nums">{r.from}</span>
                       </div>
-                    </div>
+                    ))}
                   </div>
                 </div>
-              ) : (
-                <div className="text-center p-6 bg-white rounded-xl shadow-md max-w-sm">
-                  <svg className="w-24 h-24 mx-auto text-indigo-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
-                  </svg>
-                  <h3 className="text-xl font-semibold text-gray-800 mb-2">BMI Results</h3>
-                  <p className="text-gray-600">Enter your details and calculate your BMI to see your health assessment.</p>
+
+                <div className="mt-8 rounded-xl border border-white/5 bg-white/[0.03] p-5">
+                  <p className="text-sm font-semibold text-white">Recommendation</p>
+                  <p className="mt-1.5 text-sm leading-relaxed text-zinc-400">{advice}</p>
                 </div>
-              )}
-            </div>
+
+                <div className="mt-auto flex flex-col gap-3 pt-8 sm:flex-row">
+                  <Link to="/plans" className="btn-primary flex-1">
+                    Find a plan <FaArrowRight className="h-3 w-3" />
+                  </Link>
+                  <Link to="/support" className="btn-secondary flex-1">Talk to a coach</Link>
+                </div>
+              </motion.div>
+            ) : (
+              <div className="flex flex-1 flex-col items-center justify-center py-12 text-center">
+                <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-brand-500/10 text-brand-400">
+                  <FaCalculator className="h-8 w-8" />
+                </div>
+                <p className="mt-6 max-w-xs text-sm text-zinc-400">
+                  Enter your details and calculate your BMI to see your health assessment here.
+                </p>
+                <ul className="mt-8 grid w-full max-w-sm grid-cols-2 gap-3 text-left text-xs">
+                  {ranges.map((r) => (
+                    <li key={r.name} className="flex items-center gap-2 rounded-lg border border-white/5 px-3 py-2">
+                      <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: r.color }} />
+                      <span className="text-zinc-300">{r.name}</span>
+                      <span className="ml-auto tabular-nums text-zinc-500">
+                        {r.to === 40 ? `${r.from}+` : `${r.from}–${r.to}`}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </div>
         </div>
-      </div>
-    </section>
+      </section>
+    </>
   );
 }
 

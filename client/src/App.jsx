@@ -1,4 +1,5 @@
-import { Routes, Route } from "react-router-dom";
+import { useEffect } from "react";
+import { Routes, Route, useLocation } from "react-router-dom";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import Home from "./pages/Home";
@@ -22,14 +23,34 @@ import TrainerDashboard from "./pages/trainer/TrainerDashboard";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import Profile from "./pages/Profile";
 import Workouts from "./pages/member/Workouts";
+import NotFound from "./pages/NotFound";
+import ResetPassword from "./pages/ResetPassword";
+import { Navigate } from "react-router-dom";
+import { useAuth, dashboardPath } from "./contexts/AuthContext";
+
+function GuestRoute({ children }) {
+  const { user } = useAuth();
+  return user ? <Navigate to={dashboardPath(user.role)} replace /> : children;
+}
+import { ErrorBoundary } from "./components/ErrorBoundary";
+
+function ScrollToTop() {
+  const { pathname } = useLocation();
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [pathname]);
+  return null;
+}
 
 function App() {
   return (
-    <AuthProvider>
-      <NotificationProvider>
-        <div className="flex flex-col min-h-screen">
+    <NotificationProvider>
+      <AuthProvider>
+        <div className="flex min-h-screen flex-col">
+          <ScrollToTop />
           <Navbar />
           <main className="flex-grow">
+            <ErrorBoundary>
             <Routes>
               <Route path="/" element={<Home />} />
               <Route path="/about" element={<About />} />
@@ -39,9 +60,10 @@ function App() {
               <Route path="/support" element={<Support />} />
               <Route path="/contact" element={<Contact />} />
               <Route path="/checkout" element={<Checkout />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/register" element={<Register />} />
+              <Route path="/login" element={<GuestRoute><Login /></GuestRoute>} />
+              <Route path="/register" element={<GuestRoute><Register /></GuestRoute>} />
               <Route path="/forgotpassword" element={<ForgotPassword />} />
+              <Route path="/reset-password/:token" element={<ResetPassword />} />
               <Route path="/bmicalculator" element={<BMICalculator />} />
               <Route 
                 path="/dashboard" 
@@ -83,13 +105,15 @@ function App() {
                   </ProtectedRoute>
                 } 
               />
+              <Route path="*" element={<NotFound />} />
             </Routes>
+            </ErrorBoundary>
           </main>
           <Footer />
           <Alert />
         </div>
-      </NotificationProvider>
-    </AuthProvider>
+      </AuthProvider>
+    </NotificationProvider>
   );
 }
 

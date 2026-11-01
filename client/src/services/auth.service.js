@@ -2,53 +2,57 @@
  * Responsible for:
  * - Authentication API integration
  * - User session management
- * CRUD Operations:
- * - CREATE: Login (POST /api/auth/login)
- * - CREATE: Register (POST /api/auth/register)
- * - DELETE: Logout (client-side)
  */
 
 import api from './api';
 
+const saveSession = ({ token, ...user }) => {
+  localStorage.setItem('authToken', token);
+  localStorage.setItem('user', JSON.stringify(user));
+  return user;
+};
+
 export const authService = {
-  // API: POST /api/auth/login - Create user session
+  // POST /api/auth/login
   async login(credentials) {
-    try {
-      const response = await api.post('/api/auth/login', credentials);
-      if (response.status === 'success' && response.data) {
-        const { token, ...userData } = response.data;
-        localStorage.setItem('authToken', token);
-        localStorage.setItem('user', JSON.stringify(userData));
-        return response;
-      }
-      throw new Error('Invalid response format');
-    } catch (error) {
-      throw {
-        message: error.response?.data?.message || 'Invalid credentials or role'
-      };
-    }
+    const { data } = await api.post('/api/auth/login', credentials);
+    return saveSession(data);
   },
 
-  // API: POST /api/auth/register - Create new user account
+  // POST /api/auth/register (logs the new member in)
   async register(userData) {
-    try {
-      const response = await api.post('/api/auth/register', userData);
-      // response = { status, data }
-      if (response.status === 'success' && response.data) {
-        return response;
-      }
-      throw new Error(response.message || 'Registration failed. Please try again.');
-    } catch (error) {
-      if (error.response?.status === 409) {
-        throw {
-          response: error.response,
-          message: 'Email is already registered. Please try logging in instead.'
-        };
-      }
-      throw {
-        message: error.response?.data?.message || 'Registration failed. Please try again.'
-      };
-    }
+    const { data } = await api.post('/api/auth/register', userData);
+    return saveSession(data);
+  },
+
+  // GET /api/auth/me
+  async me() {
+    const { data } = await api.get('/api/auth/me');
+    localStorage.setItem('user', JSON.stringify(data));
+    return data;
+  },
+
+  // POST /api/auth/forgot-password
+  forgotPassword(email) {
+    return api.post('/api/auth/forgot-password', { email });
+  },
+
+  // POST /api/auth/reset-password/:token (logs the user in)
+  async resetPassword(token, password) {
+    const { data } = await api.post(`/api/auth/reset-password/${token}`, { password });
+    return saveSession(data);
+  },
+
+  // PATCH /api/users/me
+  async updateProfile(updates) {
+    const { data } = await api.patch('/api/users/me', updates);
+    localStorage.setItem('user', JSON.stringify(data));
+    return data;
+  },
+
+  // PATCH /api/users/me/password
+  changePassword(currentPassword, newPassword) {
+    return api.patch('/api/users/me/password', { currentPassword, newPassword });
   },
 
   // Client-side session cleanup

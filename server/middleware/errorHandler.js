@@ -1,68 +1,43 @@
+// Postgres error codes: https://www.postgresql.org/docs/current/errcodes-appendix.html
+const PG = {
+  UNIQUE: '23505',
+  FOREIGN_KEY: '23503',
+  CHECK: '23514',
+  INVALID_TEXT: '22P02'
+};
+
+// eslint-disable-next-line no-unused-vars
 export const errorHandler = (err, req, res, next) => {
-  console.error('Error:', err.name, err.message);
-  console.error('Stack:', err.stack);
+  // Drizzle wraps driver errors; the Postgres error is in `cause`
+  const pgError = err.cause?.code ? err.cause : err;
+  console.error('Error:', err.name, pgError.message);
 
-  // Validation errors
-  if (err.name === 'ValidationError') {
-    return res.status(400).json({
-      status: 'error',
-      error: 'Validation Error',
-      details: Object.values(err.errors).map(e => e.message)
-    });
+  switch (pgError.code) {
+    case PG.UNIQUE:
+      return res.status(409).json({
+        status: 'error',
+        message: /email/.test(pgError.constraint || pgError.detail || '') ? 'Email is already registered' : 'This record already exists'
+      });
+    case PG.FOREIGN_KEY:
+      return res.status(400).json({ status: 'error', message: 'A related record does not exist' });
+    case PG.CHECK:
+      return res.status(400).json({ status: 'error', message: 'Some values are out of the allowed range' });
+    case PG.INVALID_TEXT:
+      return res.status(400).json({ status: 'error', message: 'Invalid identifier' });
   }
 
-  // Authentication errors
-  if (err.name === 'JsonWebTokenError' || err.name === 'TokenExpiredError') {
-    return res.status(401).json({ 
-      status: 'error',
-      error: 'Authentication Error',
-      message: err.name === 'TokenExpiredError' ? 'Token has expired' : 'Invalid token'
-    });
+  // Malformed JSON body
+  if (err.type === 'entity.parse.failed') {
+    return res.status(400).json({ status: 'error', message: 'Malformed JSON in request body' });
   }
 
-  // Duplicate key errors
-  if (err.code === 11000) {
-    const field = Object.keys(err.keyValue)[0];
-    return res.status(409).json({
-      status: 'error',
-      error: 'Duplicate Error',
-      message: `${field} already exists`
-    });
+  // Database unreachable
+  if (['ECONNREFUSED', 'ENOTFOUND', 'ETIMEDOUT', '57P01', '53300'].includes(pgError.code) || /DATABASE_URL|connect/i.test(err.message)) {
+    return res.status(503).json({ status: 'error', message: 'Database is unavailable. Please try again in a few moments.' });
   }
 
-  // Database connection errors
-  if (err.name === 'MongoTimeoutError' || err.message.includes('timed out')) {
-    return res.status(503).json({
-      status: 'error',
-      error: 'Service Unavailable',
-      message: 'Database operation timed out. Please try again in a few moments.'
-    });
-  }
-
-  // Server errors
-  if (err.name === 'MongoServerError') {
-    return res.status(503).json({
-      status: 'error',
-      error: 'Database Error',
-      message: 'Database operation failed. Please try again later.'
-    });
-  }
-
-  // Cast errors (invalid IDs etc)
-  if (err.name === 'CastError') {
-    return res.status(400).json({
-      status: 'error',
-      error: 'Invalid Data',
-      message: `Invalid ${err.path}: ${err.value}`
-    });
-  }
-
-  // Default error
-  res.status(500).json({
+  res.status(err.status || 500).json({
     status: 'error',
-    message: process.env.NODE_ENV === 'production' 
-      ? 'An unexpected error occurred' 
-      : err.message,
-    ...(process.env.NODE_ENV !== 'production' && { stack: err.stack })
+    message: process.env.NODE_ENV === 'production' ? 'An unexpected error occurred' : err.message
   });
 };

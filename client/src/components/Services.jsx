@@ -1,32 +1,49 @@
-import React from "react";
+import { Link } from "react-router-dom";
+import { motion } from "framer-motion";
+import { FaArrowRight } from "react-icons/fa";
+import { services } from "../data/site";
+import { SectionHeading } from "./ui/Section";
+
+export function ServiceCard({ service, index, detailed = false }) {
+  const Icon = service.icon;
+  return (
+    <motion.article
+      initial={{ opacity: 0, y: 24 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: "-60px" }}
+      transition={{ duration: 0.5, delay: (index % 3) * 0.08 }}
+      className="card card-hover group relative overflow-hidden p-8"
+    >
+      <div className="absolute -right-10 -top-10 h-32 w-32 rounded-full bg-brand-500/0 blur-2xl transition-colors duration-500 group-hover:bg-brand-500/20" />
+      <span className="font-display text-sm font-semibold text-zinc-600">0{index + 1}</span>
+      <div className="mt-4 flex h-14 w-14 items-center justify-center rounded-xl bg-brand-500/10 text-brand-400 ring-1 ring-brand-500/20 transition group-hover:bg-brand-500 group-hover:text-white">
+        <Icon className="h-6 w-6" />
+      </div>
+      <h3 className="mt-6 font-display text-2xl font-semibold uppercase tracking-wide">{service.title}</h3>
+      <p className="mt-3 text-sm leading-relaxed text-zinc-400">{service.desc}</p>
+      {detailed && <p className="mt-4 border-t border-white/5 pt-4 text-sm text-zinc-500">{service.extra}</p>}
+    </motion.article>
+  );
+}
 
 function Services() {
-  const services = [
-    { title: "Personal Training", desc: "Get 1-on-1 coaching from certified trainers.", icon: "🏋️" },
-    { title: "Group Workouts", desc: "Engage in dynamic group classes for extra motivation.", icon: "🤸" },
-    { title: "Diet Plans", desc: "Receive tailored nutrition plans for optimal results.", icon: "🥗" },
-  ];
-
   return (
-    <section className="py-16 bg-gray-100 text-center relative overflow-hidden">
-      <div className="absolute inset-0 bg-gradient-to-br from-gray-200 to-gray-300 opacity-30"></div>
-      
-      <div className="max-w-7xl mx-auto px-8 relative z-10">
-        <h2 className="text-5xl font-extrabold text-gray-800 mb-6">Our Services</h2>
-        <p className="text-lg text-gray-600 mb-12">
-          Explore personalized programs designed to help you achieve your fitness goals.
-        </p>
-
-        <div className="grid gap-12 sm:grid-cols-2 lg:grid-cols-3">
-          {services.map((service, index) => (
-            <div
-              key={index}
-              className="bg-white p-8 rounded-3xl shadow-xl transform transition-transform duration-300 hover:scale-105 flex flex-col items-center text-center"
-            >
-              <div className="text-6xl mb-6">{service.icon}</div>
-              <h3 className="text-3xl font-semibold text-gray-800 mb-4">{service.title}</h3>
-              <p className="text-gray-600">{service.desc}</p>
-            </div>
+    <section className="section relative bg-ink-900">
+      <div className="container-x">
+        <div className="flex flex-col items-start justify-between gap-6 md:flex-row md:items-end">
+          <SectionHeading
+            align="left"
+            eyebrow="What we offer"
+            title="Programs built around you"
+            description="From one-on-one coaching to nutrition guidance, every program is designed to fit your goals and schedule."
+          />
+          <Link to="/services" className="btn-secondary shrink-0">
+            All services <FaArrowRight className="h-3 w-3" />
+          </Link>
+        </div>
+        <div className="mt-14 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          {services.slice(0, 3).map((service, i) => (
+            <ServiceCard key={service.title} service={service} index={i} />
           ))}
         </div>
       </div>

@@ -1,16 +1,26 @@
 import { useForm } from "react-hook-form";
-import { useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useAuth, dashboardPath } from "../contexts/AuthContext";
 import { useNotification } from "../contexts/NotificationContext";
-import { useAuth } from "../contexts/AuthContext";
 import { authService } from "../services/auth.service";
 import { Spinner } from "../components/ui/Spinner";
+import { AuthLayout } from "../components/ui/AuthLayout";
 import { useState } from "react";
+
+const passwordRules = [
+  { test: (v) => v.length >= 8, label: "8+ characters" },
+  { test: (v) => /[A-Z]/.test(v), label: "Uppercase letter" },
+  { test: (v) => /[a-z]/.test(v), label: "Lowercase letter" },
+  { test: (v) => /\d/.test(v), label: "Number" },
+  { test: (v) => /[!@#$%^&*]/.test(v), label: "Special (!@#$%^&*)" },
+];
 
 function Register() {
   const { showNotification } = useNotification();
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
-  const { register, handleSubmit, formState: { errors } } = useForm();
+  const { register, handleSubmit, watch, formState: { errors } } = useForm();
+  const password = watch("password") || "";
 
   const passwordValidation = {
     required: "Password is required",
@@ -21,72 +31,108 @@ function Register() {
     }
   };
 
+  const { login } = useAuth();
+  const location = useLocation();
+  const from = location.state?.from;
+
   const onSubmit = async (data) => {
     setIsLoading(true);
     try {
-      const response = await authService.register(data);
-      if (response?.data) {
-        showNotification("Registration successful! Please login to continue.", "success");
-        navigate('/login', { replace: true });
+      const user = await authService.register(data);
+      login(user);
+      showNotification(`Welcome to FitSync, ${user.name.split(" ")[0]}! Your account is ready.`, "success");
+      if (from?.pathname) {
+        navigate(from.pathname, { replace: true, state: from.state });
+      } else {
+        navigate(dashboardPath(user.role), { replace: true });
       }
     } catch (error) {
-      const errorMessage = error.response?.status === 409
-        ? "Email is already registered. Please try logging in instead."
-        : error.response?.data?.message || "Registration failed. Please try again.";
-      
-      showNotification(errorMessage, "error");
+      showNotification(error.message || "Registration failed. Please try again.", "error");
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-cover bg-center bg-gray-100 dark:bg-gray-900" style={{ backgroundImage: 'url("/Login & Register.png")' }}>
-      <form onSubmit={handleSubmit(onSubmit)} className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg w-full sm:w-96">
-        <h2 className="text-2xl font-bold text-center text-gray-700 dark:text-white">Register</h2>
-
-        <div className="mt-4">
-          <label className="block text-gray-600 dark:text-gray-300">Name</label>
+    <AuthLayout
+      title="Join FitSync"
+      subtitle="Create your free account and start training smarter today."
+      footer={
+        <>
+          Already have an account?{" "}
+          <Link to="/login" state={location.state} className="font-semibold text-brand-400 hover:text-brand-300">Log in</Link>
+        </>
+      }
+    >
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-5" noValidate>
+        <div>
+          <label htmlFor="name" className="label">Full name</label>
           <input
-            {...register("name", { required: "Name is required" })}
-            className="w-full p-2 border rounded-lg dark:bg-gray-700 dark:text-white"
+            id="name"
+            {...register("name", {
+              required: "Name is required",
+              minLength: { value: 2, message: "Name must be at least 2 characters" }
+            })}
+            autoComplete="name"
+            placeholder="Jane Doe"
+            className={`input ${errors.name ? "input-error" : ""}`}
           />
-          {errors.name && <p className="text-red-500">{errors.name.message}</p>}
+          {errors.name && <p className="field-error">{errors.name.message}</p>}
         </div>
 
-        <div className="mt-4">
-          <label className="block text-gray-600 dark:text-gray-300">Email</label>
+        <div>
+          <label htmlFor="email" className="label">Email</label>
           <input
-            {...register("email", { required: "Email is required" })}
+            id="email"
+            {...register("email", {
+              required: "Email is required",
+              pattern: { value: /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/, message: "Invalid email address" }
+            })}
             type="email"
-            className="w-full p-2 border rounded-lg dark:bg-gray-700 dark:text-white"
+            autoComplete="email"
+            placeholder="you@example.com"
+            className={`input ${errors.email ? "input-error" : ""}`}
           />
-          {errors.email && <p className="text-red-500">{errors.email.message}</p>}
+          {errors.email && <p className="field-error">{errors.email.message}</p>}
         </div>
 
-        <div className="mt-4">
-          <label className="block text-gray-600 dark:text-gray-300">Password</label>
+        <div>
+          <label htmlFor="password" className="label">Password</label>
           <input
+            id="password"
             {...register("password", passwordValidation)}
             type="password"
-            className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white dark:border-gray-600"
-            placeholder="Create a password (8+ chars, 1 uppercase, 1 lowercase, 1 number, 1 special char)"
+            autoComplete="new-password"
+            placeholder="Create a strong password"
+            className={`input ${errors.password ? "input-error" : ""}`}
           />
-          {errors.password && <p className="text-red-500">{errors.password.message}</p>}
+          <ul className="mt-3 flex flex-wrap gap-2">
+            {passwordRules.map((rule) => {
+              const ok = rule.test(password);
+              return (
+                <li
+                  key={rule.label}
+                  className={`rounded-full border px-2.5 py-1 text-[11px] font-medium transition-colors ${
+                    ok ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-400" : "border-white/10 text-zinc-500"
+                  }`}
+                >
+                  {ok ? "✓ " : ""}{rule.label}
+                </li>
+              );
+            })}
+          </ul>
+          {errors.password && <p className="field-error">{errors.password.message}</p>}
         </div>
 
-        <button type="submit" className="mt-4 w-full bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-700">
-          {isLoading ? <Spinner /> : "Register"}
+        <button type="submit" disabled={isLoading} className="btn-primary w-full py-3.5">
+          {isLoading ? <Spinner size="sm" color="white" /> : "Create account"}
         </button>
 
-        <div className="mt-4 text-center">
-          <p className="text-sm text-gray-600 dark:text-gray-300">
-            Already have an account?{" "}
-            <a href="/login" className="text-blue-500 hover:underline">Login</a>
-          </p>
-        </div>
+        <p className="text-center text-xs text-zinc-500">
+          By creating an account you agree to our terms of service and privacy policy.
+        </p>
       </form>
-    </div>
+    </AuthLayout>
   );
 }
 

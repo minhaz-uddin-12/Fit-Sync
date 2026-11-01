@@ -1,199 +1,155 @@
-import express from 'express';
-import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
-import rateLimit from 'express-rate-limit';
-import { validate } from '../middleware/validate.js';
-import { userSchema } from '../utils/validators.js';
-import User from '../models/User.js';
-import { authenticate, authorize } from '../middleware/auth.js';
-
-const router = express.Router();
-
-// Rate limiting for auth requests
-const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 5, // 5 attempts
-  message: { error: 'Too many attempts, please try again later' }
-});
-
 /* BACKEND DEVELOPER 1
  * Responsible for:
  * - Authentication routes
  * - JWT management
- * - Security middleware
- * - User session handling
  * CRUD Operations:
- * - CREATE: Register users
- * - READ: Verify tokens
+ * - CREATE: Register users, log in
+ * - READ: Current user
  * - UPDATE: Password reset
  */
 
-// CREATE - Register privileged user (admin/trainer)
-router.post('/register-privileged', authenticate, authorize('admin'), validate(userSchema), async (req, res, next) => {
-  try {
-    const { name, email, password, role } = req.body;
+import crypto from 'crypto';
+import express from 'express';
+import jwt from 'jsonwebtoken';
+import rateLimit from 'express-rate-limit';
+import { and, eq, gt } from 'drizzle-orm';
+import { validate } from '../middleware/validate.js';
+import {
+  userSchema,
+  loginSchema,
+  forgotPasswordSchema,
+  resetPasswordSchema
+} from '../utils/validators.js';
+import { authenticate } from '../middleware/auth.js';
+import { db, schema } from '../db/index.js';
+import {
+  findUserByEmail,
+  getPublicUser,
+  hashPassword,
+  hashToken,
+  publicUser,
+  verifyPassword
+} from '../db/users.js';
 
-    if (!['admin', 'trainer'].includes(role)) {
-      return res.status(400).json({
-        status: 'error',
-        message: 'Invalid role specified. Only admin and trainer roles are allowed.'
-      });
-    }
+const { users } = schema;
+const router = express.Router();
 
-    const userExists = await User.findOne({ email });
-    if (userExists) {
-      return res.status(409).json({
-        status: 'error',
-        message: 'Email is already registered'
-      });
-    }
-
-    const user = await User.create({
-      name,
-      email,
-      password,
-      role
-    });
-
-    res.status(201).json({
-      status: 'success',
-      message: `${role} account created successfully`,
-      data: {
-        _id: user._id,
-        name: user.name,
-        email: user.email,
-        role: user.role
-      }
-    });
-  } catch (error) {
-    next(error);
-  }
+// Only failed attempts count toward the limit
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  skipSuccessfulRequests: true,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { status: 'error', message: 'Too many attempts. Please try again in 15 minutes.' }
 });
 
-// CREATE - Register regular user (member)
-router.post('/register', validate(userSchema), async (req, res, next) => {
-  try {
-    const { name, email, password } = req.body;
-    // Force role to be 'member' for public registration
-    const role = 'member';
+const signToken = (user) =>
+  jwt.sign(
+    { userId: user.id, role: user.role },
+    process.env.JWT_SECRET,
+    { expiresIn: '7d', algorithm: 'HS256' }
+  );
 
-    const userExists = await User.findOne({ email });
-    if (userExists) {
-      return res.status(409).json({
-        status: 'error',
-        message: 'Email is already registered'
-      });
-    }
+const authPayload = (user) => ({ ...user, token: signToken(user) });
 
-    // REMOVE manual hashing, let pre-save hook hash the password
-    const user = await User.create({
-      name,
-      email,
-      password,
-      role: 'member' // <-- Ensure role is set
-    });
+// CREATE - Register a member (public registration is always role "member")
+router.post('/register', authLimiter, validate(userSchema), async (req, res) => {
+  const { name, email, password } = req.body;
 
-    const token = jwt.sign(
-      { userId: user._id, role: user.role }, // Include role in registration token
-      process.env.JWT_SECRET,
-      { 
-        expiresIn: '7d',
-        algorithm: 'HS256'
-      }
-    );
-
-    res.status(201).json({
-      status: 'success',
-      data: {
-        _id: user._id,
-        name: user.name,
-        email: user.email,
-        role: user.role, // Add this line
-        token
-      }
-    });
-  } catch (error) {
-    next(error);
+  if (await findUserByEmail(email)) {
+    return res.status(409).json({ status: 'error', message: 'Email is already registered' });
   }
+
+  const [user] = await db.insert(users).values({
+    name,
+    email,
+    passwordHash: await hashPassword(password),
+    role: 'member',
+    lastLogin: new Date()
+  }).returning();
+
+  res.status(201).json({ status: 'success', data: authPayload(publicUser(user)) });
 });
 
+// CREATE - Log in; the account's role decides where the client sends the user
+router.post('/login', authLimiter, validate(loginSchema), async (req, res) => {
+  const { email, password } = req.body;
 
-// CREATE - User login and token generation
-router.post('/login', authLimiter, async (req, res, next) => {
-  try {
-    const { email, password, role } = req.body;
-
-    // Get full Mongoose document for password comparison and role check
-    const user = await User.findOne({ email }).select('+password +role');
-    if (!user) {
-      return res.status(401).json({
-        status: 'error',
-        message: 'Invalid email or password'
-      });
-    }
-
-    // Use bcrypt.compare for password check
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) {
-      return res.status(401).json({
-        status: 'error',
-        message: 'Invalid email or password'
-      });
-    }
-
-    if (user.role !== role) {
-      return res.status(401).json({
-        status: 'error',
-        message: `Invalid role selected. You are registered as a ${user.role}`
-      });
-    }
-
-    const token = jwt.sign(
-      { userId: user._id, role: user.role },
-      process.env.JWT_SECRET,
-      { expiresIn: '7d' }
-    );
-
-    res.status(200).json({
-      status: 'success',
-      data: {
-        _id: user._id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-        token
-      }
-    });
-  } catch (error) {
-    next(error);
+  const user = await findUserByEmail(email);
+  if (!user || !(await verifyPassword(password, user.passwordHash))) {
+    return res.status(401).json({ status: 'error', message: 'Invalid email or password' });
   }
+
+  await db.update(users).set({ lastLogin: new Date() }).where(eq(users.id, user.id));
+
+  res.json({ status: 'success', data: authPayload(await getPublicUser(user.id)) });
 });
 
-// READ - Verify user token
-router.get('/verify', async (req, res) => {
-  const token = req.headers.authorization?.split(' ')[1];
-  
-  if (!token) {
-    return res.status(401).json({ message: 'No token provided' });
-  }
-
-  try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const user = await User.findById(decoded.userId).select('-password');
-    
-    if (!user) {
-      return res.status(401).json({ message: 'Invalid token' });
-    }
-
-    res.json(user);
-  } catch (error) {
-    res.status(401).json({ message: 'Invalid token' });
-  }
+// READ - Current user from the token
+router.get('/me', authenticate, (req, res) => {
+  res.json({ status: 'success', data: req.user });
 });
 
-// Logout (optional - client-side token removal)
+// Kept for older clients
+router.get('/verify', authenticate, (req, res) => {
+  res.json({ status: 'success', data: req.user });
+});
+
+// UPDATE - Start a password reset
+router.post('/forgot-password', authLimiter, validate(forgotPasswordSchema), async (req, res) => {
+  const user = await findUserByEmail(req.body.email);
+  const response = {
+    status: 'success',
+    message: 'If an account exists for that email, a reset link has been sent.'
+  };
+
+  if (user) {
+    const token = crypto.randomBytes(32).toString('hex');
+    await db.update(users).set({
+      resetTokenHash: hashToken(token),
+      resetTokenExpires: new Date(Date.now() + 60 * 60 * 1000)
+    }).where(eq(users.id, user.id));
+
+    const clientUrl = (process.env.CLIENT_URL || 'http://localhost:5173').split(',')[0].trim();
+    const resetUrl = `${clientUrl}/reset-password/${token}`;
+
+    // No email provider is configured yet: log the link, and return it
+    // outside production so the flow can be completed locally.
+    console.log(`🔑 Password reset link for ${user.email}: ${resetUrl}`);
+    if (process.env.NODE_ENV !== 'production') {
+      response.devResetUrl = resetUrl;
+    }
+  }
+
+  res.json(response);
+});
+
+// UPDATE - Finish a password reset (token is single use)
+router.post('/reset-password/:token', authLimiter, validate(resetPasswordSchema), async (req, res) => {
+  const [user] = await db.update(users)
+    .set({
+      passwordHash: await hashPassword(req.body.password),
+      resetTokenHash: null,
+      resetTokenExpires: null,
+      lastLogin: new Date()
+    })
+    .where(and(
+      eq(users.resetTokenHash, hashToken(req.params.token)),
+      gt(users.resetTokenExpires, new Date())
+    ))
+    .returning({ id: users.id });
+
+  if (!user) {
+    return res.status(400).json({ status: 'error', message: 'This reset link is invalid or has expired.' });
+  }
+
+  res.json({ status: 'success', message: 'Password updated', data: authPayload(await getPublicUser(user.id)) });
+});
+
+// Logout is client-side (token removal)
 router.post('/logout', (req, res) => {
-  res.json({ message: 'Logged out successfully' });
+  res.json({ status: 'success', message: 'Logged out successfully' });
 });
 
 export default router;

@@ -1,3 +1,115 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    @apply bg-ink-950 font-sans text-zinc-300 antialiased;
+  }
+
+  h1, h2, h3, h4 {
+    @apply text-white;
+  }
+
+  ::selection {
+    @apply bg-brand-500 text-white;
+  }
+
+  :focus-visible {
+    @apply outline-none ring-2 ring-brand-500 ring-offset-2 ring-offset-ink-950;
+  }
+}
+
+@layer components {
+  .container-x {
+    @apply mx-auto w-full max-w-7xl px-5 sm:px-8;
+  }
+
+  .section {
+    @apply py-20 sm:py-28;
+  }
+
+  .eyebrow {
+    @apply inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-brand-400;
+  }
+
+  .eyebrow::before {
+    content: "";
+    @apply h-px w-6 bg-brand-500;
+  }
+
+  .heading-xl {
+    @apply font-display text-5xl font-bold uppercase leading-[0.95] tracking-tight text-white sm:text-6xl lg:text-7xl;
+  }
+
+  .heading-lg {
+    @apply font-display text-4xl font-bold uppercase leading-[1] tracking-tight text-white sm:text-5xl;
+  }
+
+  .heading-md {
+    @apply font-display text-2xl font-semibold uppercase tracking-wide text-white;
+  }
+
+  .lead {
+    @apply text-base leading-relaxed text-zinc-400 sm:text-lg;
+  }
+
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-full px-6 py-3 text-sm font-semibold transition-all duration-200 disabled:cursor-not-allowed disabled:opacity-60;
+  }
+
+  .btn-primary {
+    @apply btn bg-brand-500 text-white shadow-glow hover:bg-brand-600 active:scale-[0.98];
+  }
+
+  .btn-secondary {
+    @apply btn border border-white/15 bg-white/5 text-white backdrop-blur hover:border-white/30 hover:bg-white/10;
+  }
+
+  .btn-ghost {
+    @apply btn px-4 text-zinc-300 hover:text-white;
+  }
+
+  .card {
+    @apply rounded-2xl border border-white/[0.06] bg-ink-850 shadow-card;
+  }
+
+  .card-hover {
+    @apply transition-all duration-300 hover:-translate-y-1 hover:border-brand-500/30;
+  }
+
+  .label {
+    @apply mb-2 block text-sm font-medium text-zinc-300;
+  }
+
+  .input {
+    @apply w-full rounded-xl border border-white/10 bg-ink-900 px-4 py-3 text-sm text-white placeholder-zinc-500 transition focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/30;
+  }
+
+  .input-error {
+    @apply border-red-500/60 focus:border-red-500 focus:ring-red-500/30;
+  }
+
+  .field-error {
+    @apply mt-1.5 text-xs text-red-400;
+  }
+
+  .chip {
+    @apply inline-flex items-center rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-medium text-zinc-300;
+  }
+}
+
+@layer utilities {
+  .text-gradient {
+    @apply bg-gradient-to-r from-brand-400 via-brand-500 to-amber-400 bg-clip-text text-transparent;
+  }
+
+  .mask-fade-b {
+    mask-image: linear-gradient(to bottom, black 40%, transparent);
+  }
+}

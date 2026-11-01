@@ -6,7 +6,7 @@ export class ErrorBoundary extends React.Component {
     this.state = { hasError: false };
   }
 
-  static getDerivedStateFromError(error) {
+  static getDerivedStateFromError() {
     return { hasError: true };
   }
 
@@ -17,15 +17,12 @@ export class ErrorBoundary extends React.Component {
   render() {
     if (this.state.hasError) {
       return (
-        <div className="min-h-screen flex items-center justify-center bg-gray-100">
-          <div className="text-center p-8 bg-white rounded-lg shadow-xl">
-            <h1 className="text-2xl font-bold text-red-600 mb-4">Something went wrong</h1>
-            <p className="text-gray-600 mb-4">Please try refreshing the page</p>
-            <button
-              onClick={() => window.location.reload()}
-              className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-            >
-              Refresh Page
+        <div className="flex min-h-[80vh] items-center justify-center px-5 pt-24">
+          <div className="card max-w-md p-10 text-center">
+            <h1 className="font-display text-4xl font-bold uppercase">Something went wrong</h1>
+            <p className="mt-3 text-zinc-400">An unexpected error occurred. Please refresh the page.</p>
+            <button onClick={() => window.location.reload()} className="btn-primary mt-8">
+              Refresh page
             </button>
           </div>
         </div>

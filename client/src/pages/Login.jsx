@@ -1,9 +1,10 @@
 import { useForm } from "react-hook-form";
-import { useNavigate } from "react-router-dom";
-import { useAuth } from "../contexts/AuthContext";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useAuth, dashboardPath } from "../contexts/AuthContext";
 import { useNotification } from "../contexts/NotificationContext";
 import { authService } from "../services/auth.service";
 import { Spinner } from "../components/ui/Spinner";
+import { AuthLayout } from "../components/ui/AuthLayout";
 import { useState } from "react";
 
 function Login() {
@@ -13,39 +14,44 @@ function Login() {
   const [isLoading, setIsLoading] = useState(false);
   const { register, handleSubmit, formState: { errors } } = useForm();
 
+  const location = useLocation();
+  const from = location.state?.from;
+
   const onSubmit = async (data) => {
     setIsLoading(true);
     try {
-      // Add default role as 'member' to credentials
-      const credentials = { ...data, role: 'member' };
-      const response = await authService.login(credentials);
-      
-      if (response?.data) {
-        login(response.data);
-        showNotification('Login successful!', 'success');
-        const redirectPath = response.data.role === 'admin' 
-          ? '/admin/dashboard'
-          : response.data.role === 'trainer'
-          ? '/trainer/dashboard'
-          : '/dashboard';
-        navigate(redirectPath, { replace: true });
+      const user = await authService.login(data);
+      login(user);
+      showNotification(`Welcome back, ${user.name.split(" ")[0]}!`, 'success');
+      if (from?.pathname) {
+        navigate(from.pathname, { replace: true, state: from.state });
+      } else {
+        navigate(dashboardPath(user.role), { replace: true });
       }
     } catch (error) {
-      showNotification(error.message || 'Invalid credentials', 'error');
+      showNotification(error.message || 'Invalid email or password', 'error');
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-cover bg-center bg-gray-100 dark:bg-gray-900" style={{ backgroundImage: 'url("/Login & Register.png")' }}>
-      <form onSubmit={handleSubmit(onSubmit)} className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg w-full sm:w-96">
-        <h2 className="text-2xl font-bold text-center text-gray-700 dark:text-white">Login</h2>
-        
-        <div className="mt-4">
-          <label className="block text-gray-600 dark:text-gray-300">Email</label>
+    <AuthLayout
+      title="Welcome back"
+      subtitle="Log in to track workouts, manage your plan and book sessions."
+      footer={
+        <>
+          Don&apos;t have an account?{" "}
+          <Link to="/register" state={location.state} className="font-semibold text-brand-400 hover:text-brand-300">Create one</Link>
+        </>
+      }
+    >
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-5" noValidate>
+        <div>
+          <label htmlFor="email" className="label">Email</label>
           <input
-            {...register("email", { 
+            id="email"
+            {...register("email", {
               required: "Email is required",
               pattern: {
                 value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
@@ -53,44 +59,39 @@ function Login() {
               }
             })}
             type="email"
-            className="w-full p-2 border rounded-lg dark:bg-gray-700 dark:text-white"
+            autoComplete="email"
+            placeholder="you@example.com"
+            className={`input ${errors.email ? "input-error" : ""}`}
           />
-          {errors.email && <p className="text-red-500 text-sm">{errors.email.message}</p>}
+          {errors.email && <p className="field-error">{errors.email.message}</p>}
         </div>
 
-        <div className="mt-4">
-          <label className="block text-gray-600 dark:text-gray-300">Password</label>
+        <div>
+          <div className="flex items-center justify-between">
+            <label htmlFor="password" className="label">Password</label>
+            <Link to="/forgotpassword" className="mb-2 text-xs font-medium text-brand-400 hover:text-brand-300">
+              Forgot password?
+            </Link>
+          </div>
           <input
-            {...register("password", { 
+            id="password"
+            {...register("password", {
               required: "Password is required",
               minLength: { value: 6, message: "Password must be at least 6 characters" }
             })}
             type="password"
-            className="w-full p-2 border rounded-lg dark:bg-gray-700 dark:text-white"
+            autoComplete="current-password"
+            placeholder="••••••••"
+            className={`input ${errors.password ? "input-error" : ""}`}
           />
-          {errors.password && <p className="text-red-500 text-sm">{errors.password.message}</p>}
+          {errors.password && <p className="field-error">{errors.password.message}</p>}
         </div>
 
-        <button 
-          type="submit" 
-          disabled={isLoading}
-          className="mt-6 w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 disabled:bg-blue-300 flex items-center justify-center"
-        >
-          {isLoading ? <Spinner /> : "Login"}
+        <button type="submit" disabled={isLoading} className="btn-primary w-full py-3.5">
+          {isLoading ? <Spinner size="sm" color="white" /> : "Log in"}
         </button>
-        
-        <div className="mt-4 text-center">
-          <a href="/forgotpassword" className="text-sm text-blue-500 hover:underline">Forgot Password?</a>
-        </div>
-        
-        <div className="mt-2 text-center">
-          <p className="text-sm text-gray-600 dark:text-gray-300">
-            Don't have an account?{" "}
-            <a href="/register" className="text-blue-500 hover:underline">Register Now</a>
-          </p>
-        </div>
       </form>
-    </div>
+    </AuthLayout>
   );
 }
 

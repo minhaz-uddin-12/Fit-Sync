@@ -1,29 +1,57 @@
-import React from "react";
+import { useEffect } from "react";
+import { AnimatePresence, motion } from "framer-motion";
+import { FaQuestion } from "react-icons/fa";
 
-function ConfirmationModal({ isOpen, onClose, onConfirm, message }) {
-  if (!isOpen) return null;
+function ConfirmationModal({
+  isOpen,
+  onClose,
+  onConfirm,
+  message,
+  title = "Are you sure?",
+  confirmLabel = "Confirm",
+  cancelLabel = "Cancel",
+}) {
+  useEffect(() => {
+    if (!isOpen) return;
+    const onKey = (e) => e.key === "Escape" && onClose();
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [isOpen, onClose]);
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
-      <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg w-11/12 sm:w-96">
-        <h2 className="text-xl font-bold text-gray-800 dark:text-white text-center">Confirm Registration</h2>
-        <p className="mt-2 text-gray-600 dark:text-gray-300 text-center">{message}</p>
-        <div className="mt-4 flex justify-center space-x-4">
-          <button
-            onClick={onConfirm}
-            className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors"
+    <AnimatePresence>
+      {isOpen && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm"
+          onClick={onClose}
+        >
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95, y: 10 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: 10 }}
+            transition={{ duration: 0.2 }}
+            className="card w-full max-w-md p-8 text-center"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="confirm-title"
+            onClick={(e) => e.stopPropagation()}
           >
-            Confirm
-          </button>
-          <button
-            onClick={onClose}
-            className="bg-gray-400 text-white px-4 py-2 rounded-lg hover:bg-gray-500 transition-colors"
-          >
-            Cancel
-          </button>
-        </div>
-      </div>
-    </div>
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-brand-500/15 text-brand-400">
+              <FaQuestion className="h-4 w-4" />
+            </div>
+            <h2 id="confirm-title" className="mt-5 font-display text-2xl font-bold uppercase">{title}</h2>
+            <p className="mt-2 text-sm leading-relaxed text-zinc-400">{message}</p>
+            <div className="mt-8 grid grid-cols-2 gap-3">
+              <button onClick={onClose} className="btn-secondary">{cancelLabel}</button>
+              <button onClick={onConfirm} className="btn-primary">{confirmLabel}</button>
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 }
 

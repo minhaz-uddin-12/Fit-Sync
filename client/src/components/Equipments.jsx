@@ -1,84 +1,53 @@
-import React from "react";
+import { Link } from "react-router-dom";
+import { motion } from "framer-motion";
+import { FaArrowRight } from "react-icons/fa";
+import { equipmentCategories } from "../data/site";
+import { SectionHeading } from "./ui/Section";
 
 const Equipments = () => {
-  const equipmentList = [
-    {
-      title: "Cardio",
-      image: "/Cardio.jpg", // Replace with actual image path
-      details: [
-        "Treadmills",
-        "Ellipticals",
-        "Bikes & Indoor Cycles",
-        "Arc Trainers",
-        "Stair Climber & Stepper",
-        "Machines",
-        "Rower",
-      ],
-    },
-    {
-      title: "Strength Training",
-      image: "/Strength Training.jpg", // Replace with actual image path
-      details: [
-        "Dumbbells",
-        "Barbells",
-        "Kettlebells",
-        "Weight Machines",
-        "Resistance Bands",
-        "Benches",
-        "Squat Racks",
-      ],
-    },
-    {
-      title: "Accessories",
-      image: "/Accessories.jpg", // Replace with actual image path
-      details: [
-        "Yoga Mats",
-        "Foam Rollers",
-        "Jump Ropes",
-        "Gloves & Straps",
-        "Exercise Balls",
-        "Battle Ropes",
-        "Resistance Bands",
-      ],
-    },
-  ];
-
   return (
-    <section className="py-16 bg-gradient-to-r from-blue-50 via-sky-100 to-violet-100">
-      {/* Section Background */}
-      <div className="absolute inset-0 bg-gradient-to-r from-blue-50 via-sky-100 to-violet-100 opacity-30 blur-xl"></div>
+    <section className="section">
+      <div className="container-x">
+        <SectionHeading
+          eyebrow="The floor"
+          title="World-class equipment"
+          description="Commercial-grade machines and free weights for every style of training."
+        />
 
-      <div className="container mx-auto px-6 text-center relative">
-        {/* Section Title */}
-        <h2 className="text-4xl font-extrabold text-gray-900 mb-4">Our Equipment</h2>
-        <p className="text-lg text-gray-700 mb-8">
-          Explore a wide range of equipment for all your training needs.
-        </p>
-
-        {/* Equipment Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-10">
-          {equipmentList.map((item, index) => (
-            <div
-              key={index}
-              className="group relative bg-white rounded-xl shadow-lg overflow-hidden transition-all duration-300 transform hover:scale-105 hover:shadow-2xl"
+        <div className="mt-14 grid gap-6 md:grid-cols-3">
+          {equipmentCategories.map((item, index) => (
+            <motion.div
+              key={item.title}
+              initial={{ opacity: 0, y: 24 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5, delay: index * 0.1 }}
             >
-              {/* Image */}
-              <img
-                src={item.image}
-                alt={item.title}
-                className="w-full h-64 object-cover transition-all duration-300 group-hover:brightness-75"
-              />
-
-              {/* Hover Overlay */}
-              <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center text-white text-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 p-6">
-                <h3 className="text-2xl font-semibold mb-3">{item.title}</h3>
-                <ul className="text-center space-y-2">
-                  {item.details.map((detail, idx) => (
-                    <li key={idx} className="text-sm">{detail}</li>
-                  ))}
-                </ul>
-              </div>
-            </div>
+              <Link
+                to="/equipments"
+                className="group relative block aspect-[4/5] overflow-hidden rounded-2xl border border-white/5"
+              >
+                <img
+                  src={item.image}
+                  alt={item.title}
+                  className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-ink-950 via-ink-950/40 to-transparent" />
+                <div className="absolute inset-x-0 bottom-0 p-7">
+                  <h3 className="font-display text-3xl font-bold uppercase">{item.title}</h3>
+                  <div className="grid grid-rows-[0fr] transition-all duration-500 group-hover:grid-rows-[1fr]">
+                    <ul className="flex flex-wrap gap-2 overflow-hidden">
+                      {item.details.map((detail) => (
+                        <li key={detail} className="chip mt-3 bg-ink-950/60 backdrop-blur">{detail}</li>
+                      ))}
+                    </ul>
+                  </div>
+                  <span className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-brand-400">
+                    View equipment <FaArrowRight className="h-3 w-3 transition-transform group-hover:translate-x-1" />
+                  </span>
+                </div>
+              </Link>
+            </motion.div>
           ))}
         </div>
       </div>

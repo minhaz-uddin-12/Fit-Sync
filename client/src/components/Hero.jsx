@@ -1,46 +1,109 @@
-import React from "react";
 import { Link } from "react-router-dom";
+import { motion } from "framer-motion";
+import { FaArrowRight, FaPlay, FaStar } from "react-icons/fa";
+import { stats } from "../data/site";
+
+const ease = [0.22, 1, 0.36, 1];
 
 function Hero() {
   return (
-    <div
-      className="relative bg-cover bg-center min-h-screen flex items-center justify-center sm:pt-28 mt-[56px] overflow-hidden"
-      style={{
-        backgroundImage: "url('/Hero.jpg')",
-        backgroundBlendMode: "overlay"
-      }}
-    >
-      {/* Overlay pattern */}
-      <div className="absolute inset-0 bg-gradient-to-br from-black/70 via-black/50 to-transparent pointer-events-none" />
-      <div 
-        className="text-center p-8 sm:p-12 rounded-lg max-w-2xl mx-auto relative z-10 backdrop-blur-sm border border-white/10"
-        style={{
-          background: "linear-gradient(145deg, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.6) 100%)"
-        }}
-      >
-        <h1 className="text-4xl sm:text-6xl font-bold text-white tracking-tight leading-tight">
-          Transform Your Life,<br />
-          <span className="text-blue-400">One Rep at a Time</span>
-        </h1>
-        <p className="text-lg sm:text-xl text-gray-300 mt-6 max-w-lg mx-auto leading-relaxed">
-          Join the FitSync community and unlock your full potential with personalized workouts, expert guidance, and a supportive network.
-        </p>
-        <div className="flex flex-col sm:flex-row gap-4 justify-center mt-8">
-          <Link 
-            to="/services" 
-            className="px-8 py-3 bg-blue-600 text-white text-lg rounded-lg hover:bg-blue-700 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-blue-500/50"
+    <section className="relative isolate flex min-h-[100svh] items-end overflow-hidden pb-16 pt-32 sm:items-center sm:pb-24">
+      <motion.img
+        src="/Hero.jpg"
+        alt=""
+        aria-hidden="true"
+        initial={{ scale: 1.12 }}
+        animate={{ scale: 1 }}
+        transition={{ duration: 1.8, ease }}
+        className="absolute inset-0 -z-20 h-full w-full object-cover object-center"
+      />
+      <div className="absolute inset-0 -z-10 bg-gradient-to-r from-ink-950 via-ink-950/80 to-ink-950/20" />
+      <div className="absolute inset-0 -z-10 bg-gradient-to-t from-ink-950 via-transparent to-ink-950/40" />
+
+      <div className="container-x">
+        <div className="max-w-3xl">
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, ease }}
+            className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 py-1.5 pl-1.5 pr-4 text-xs font-medium text-zinc-300 backdrop-blur"
           >
-            Start Your Journey
-          </Link>
-          <Link 
-            to="/about" 
-            className="px-8 py-3 bg-transparent text-white text-lg rounded-lg border-2 border-white/50 hover:bg-white/10 transition-all duration-300 hover:border-white"
+            <span className="rounded-full bg-brand-500 px-2.5 py-0.5 font-semibold text-white">New</span>
+            Personal coaching now included in Premium
+          </motion.div>
+
+          <motion.h1
+            initial={{ opacity: 0, y: 24 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.1, ease }}
+            className="mt-6 font-display text-6xl font-bold uppercase leading-[0.9] tracking-tight text-white sm:text-7xl lg:text-[6.5rem]"
           >
-            Learn More
-          </Link>
+            Transform your body.
+            <br />
+            <span className="text-gradient">One rep at a time.</span>
+          </motion.h1>
+
+          <motion.p
+            initial={{ opacity: 0, y: 24 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.2, ease }}
+            className="lead mt-6 max-w-xl text-zinc-300"
+          >
+            Join the FitSync community and reach your potential with personalized workouts, expert
+            coaches and progress tracking that keeps you moving forward.
+          </motion.p>
+
+          <motion.div
+            initial={{ opacity: 0, y: 24 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.3, ease }}
+            className="mt-10 flex flex-col gap-3 sm:flex-row"
+          >
+            <Link to="/plans" className="btn-primary px-8 py-4 text-base">
+              Start your journey <FaArrowRight className="h-3.5 w-3.5" />
+            </Link>
+            <Link to="/services" className="btn-secondary px-8 py-4 text-base">
+              <FaPlay className="h-3 w-3 text-brand-400" /> Explore programs
+            </Link>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.8, delay: 0.5 }}
+            className="mt-10 flex items-center gap-4"
+          >
+            <div className="flex -space-x-3">
+              {["/Enayet.jpg", "/Reza.jpg", "/Srishty.jpg"].map((src) => (
+                <img key={src} src={src} alt="" className="h-10 w-10 rounded-full border-2 border-ink-950 object-cover" />
+              ))}
+            </div>
+            <div className="text-sm">
+              <div className="flex items-center gap-1 text-amber-400">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <FaStar key={i} className="h-3.5 w-3.5" />
+                ))}
+              </div>
+              <p className="mt-0.5 text-zinc-400">Loved by 2,500+ members</p>
+            </div>
+          </motion.div>
         </div>
+
+        <motion.dl
+          initial={{ opacity: 0, y: 24 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, delay: 0.6, ease }}
+          className="mt-16 grid grid-cols-2 gap-px overflow-hidden rounded-2xl border border-white/10 bg-white/10 backdrop-blur-md sm:grid-cols-4 lg:mt-24"
+        >
+          {stats.map((stat) => (
+            <div key={stat.label} className="bg-ink-950/70 px-6 py-5">
+              <dt className="text-xs uppercase tracking-widest text-zinc-500">{stat.label}</dt>
+              <dd className="mt-1 font-display text-3xl font-bold text-white sm:text-4xl">{stat.value}</dd>
+            </div>
+          ))}
+        </motion.dl>
       </div>
-    </div>
+    </section>
   );
 }
 

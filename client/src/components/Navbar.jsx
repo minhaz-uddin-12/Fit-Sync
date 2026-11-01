@@ -1,203 +1,215 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Link } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
+import { useState, useEffect, useRef } from "react";
+import { Link, NavLink, useLocation } from "react-router-dom";
+import { AnimatePresence, motion } from "framer-motion";
+import { FaBars, FaTimes, FaChevronDown, FaSignOutAlt, FaThLarge, FaUser, FaDumbbell } from "react-icons/fa";
+import { useAuth } from "../contexts/AuthContext";
+import { navLinks } from "../data/site";
+import { Logo } from "./ui/Logo";
+
+const roleLinks = {
+  member: [
+    { path: "/dashboard", label: "Dashboard", icon: FaThLarge },
+    { path: "/workouts", label: "My Workouts", icon: FaDumbbell },
+    { path: "/profile", label: "Profile", icon: FaUser },
+  ],
+  trainer: [
+    { path: "/trainer/dashboard", label: "Trainer Panel", icon: FaThLarge },
+    { path: "/profile", label: "Profile", icon: FaUser },
+  ],
+  admin: [
+    { path: "/admin/dashboard", label: "Admin Panel", icon: FaThLarge },
+    { path: "/profile", label: "Profile", icon: FaUser },
+  ],
+};
 
 function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
-  const dropdownRef = useRef(null);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+  const menuRef = useRef(null);
+  const { pathname } = useLocation();
   const { user, isAuthenticated, logout } = useAuth();
 
-  // Close dropdown when clicking outside
+  const links = roleLinks[user?.role?.toLowerCase()] || [];
+  const initial = user?.name?.[0]?.toUpperCase() || "U";
+
   useEffect(() => {
-    function handleClickOutside(event) {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-        setIsOpen(false);
-      }
-    }
-    
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
+    const onScroll = () => setScrolled(window.scrollY > 12);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  // Dynamic Links based on Role
-  const getRoleLinks = () => {
-    switch (user?.role?.toLowerCase()) {
-      case 'member':
-        return [
-          { path: '/dashboard', label: 'Dashboard' },
-          { path: '/workouts', label: 'My Workouts' },
-          { path: '/profile', label: 'Profile' },
-        ];
-      case 'trainer':
-        return [
-          { path: '/trainer/dashboard', label: 'Trainer Panel' },
-          { path: '/clients', label: 'Manage Clients' },
-          { path: '/profile', label: 'Profile' },
-        ];
-      case 'admin':
-        return [
-          { path: '/admin/dashboard', label: 'Admin Panel' },
-          { path: '/manage-users', label: 'Manage Users' },
-          { path: '/profile', label: 'Profile' },
-        ];
-      default:
-        return [];
-    }
-  };
+  useEffect(() => {
+    setIsOpen(false);
+    setMenuOpen(false);
+  }, [pathname]);
 
-  const links = getRoleLinks();
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (menuRef.current && !menuRef.current.contains(event.target)) {
+        setMenuOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const solid = scrolled || isOpen;
+
+  const linkClass = ({ isActive }) =>
+    `relative px-3 py-2 text-sm font-medium transition-colors ${
+      isActive ? "text-white" : "text-zinc-400 hover:text-white"
+    }`;
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 w-full bg-gray-900 text-white shadow-lg">
-      <div className="container mx-auto px-6">
-        <div className="flex items-center h-16">
-          
-          {/* Logo - Far Left */}
-          <div className="mr-auto">
-            <a href="/" className="flex items-center">
-              <div className="w-8 h-8 mr-2" style={{backgroundImage: 'url("/Logo.svg")'}}></div>
-              <span className="text-xl font-bold text-blue-400">FitSync</span>
-            </a>
-          </div>
-          
-          {/* Navigation Links - True Center */}
-          <div className="hidden md:flex items-center justify-center absolute left-0 right-0 mx-auto" style={{ width: 'fit-content' }}>
-            <ul className="flex space-x-6">
-              <li><Link to="/" className="text-gray-300 hover:text-white transition-colors duration-200 font-medium">Home</Link></li>
-              <li><Link to="/about" className="text-gray-300 hover:text-white transition-colors duration-200 font-medium">About</Link></li>
-              <li><Link to="/services" className="text-gray-300 hover:text-white transition-colors duration-200 font-medium">Services</Link></li>
-              <li><Link to="/equipments" className="text-gray-300 hover:text-white transition-colors duration-200 font-medium">Equipments</Link></li>
-              <li><Link to="/plans" className="text-gray-300 hover:text-white transition-colors duration-200 font-medium">Plans</Link></li>
-              <li><Link to="/support" className="text-gray-300 hover:text-white transition-colors duration-200 font-medium">Support</Link></li>
-              <li><Link to="/contact" className="text-gray-300 hover:text-white transition-colors duration-200 font-medium">Contact</Link></li>
-            </ul>
-          </div>
-          
-          {/* Auth Buttons - Far Right */}
-          <div className="hidden md:flex items-center ml-auto">
-            {!isAuthenticated ? (
-              <>
-                <Link to="/login" className="px-4 py-2 text-sm font-medium text-gray-200 hover:text-white transition-colors duration-200">Login</Link>
-                <Link to="/register" className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 transition-colors duration-200 ml-2">Become a Member</Link>
-              </>
-            ) : (
-              <div className="flex items-center">
-                <div className="relative group">
-                  <button className="flex items-center px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-gray-800 to-gray-700 rounded-md hover:from-gray-700 hover:to-gray-600 transition-all duration-300 shadow-md">
-                    <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                    </svg>
-                    <span>My Account</span>
-                    <svg className="w-4 h-4 ml-2 transition-transform duration-200 group-hover:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
-                    </svg>
-                  </button>
-                  <div className="absolute right-0 z-10 mt-2 w-56 origin-top-right bg-white rounded-lg shadow-xl py-1 hidden group-hover:block border border-gray-100 transform transition-all duration-200">
-                    <div className="px-4 py-2 border-b border-gray-100">
-                      <span className="text-sm font-semibold text-gray-900">Welcome!</span>
-                      <span className="block text-xs text-gray-500 mt-0.5">{user.role} Account</span>
+    <nav
+      className={`fixed inset-x-0 top-0 z-50 transition-all duration-300 ${
+        solid ? "border-b border-white/5 bg-ink-950/85 backdrop-blur-xl" : "bg-transparent"
+      }`}
+    >
+      <div className="container-x flex h-[72px] items-center justify-between gap-6">
+        <Logo />
+
+        <ul className="hidden items-center lg:flex">
+          {navLinks.map((link) => (
+            <li key={link.path}>
+              <NavLink to={link.path} end={link.path === "/"} className={linkClass}>
+                {({ isActive }) => (
+                  <>
+                    {link.label}
+                    {isActive && (
+                      <motion.span
+                        layoutId="nav-underline"
+                        className="absolute inset-x-3 -bottom-0.5 h-0.5 rounded-full bg-brand-500"
+                      />
+                    )}
+                  </>
+                )}
+              </NavLink>
+            </li>
+          ))}
+        </ul>
+
+        <div className="hidden items-center gap-2 lg:flex">
+          {!isAuthenticated ? (
+            <>
+              <Link to="/login" className="btn-ghost">Log in</Link>
+              <Link to="/register" className="btn-primary py-2.5">Join now</Link>
+            </>
+          ) : (
+            <div className="relative" ref={menuRef}>
+              <button
+                onClick={() => setMenuOpen((v) => !v)}
+                className="flex items-center gap-3 rounded-full border border-white/10 bg-white/5 py-1.5 pl-1.5 pr-4 text-sm font-medium text-white transition hover:border-white/20"
+                aria-expanded={menuOpen}
+                aria-haspopup="menu"
+              >
+                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-500 font-semibold">
+                  {initial}
+                </span>
+                <span className="max-w-[8rem] truncate">{user?.name || "My account"}</span>
+                <FaChevronDown className={`h-3 w-3 text-zinc-400 transition-transform ${menuOpen ? "rotate-180" : ""}`} />
+              </button>
+
+              <AnimatePresence>
+                {menuOpen && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -6, scale: 0.98 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: -6, scale: 0.98 }}
+                    transition={{ duration: 0.15 }}
+                    className="card absolute right-0 mt-3 w-60 overflow-hidden p-1.5"
+                    role="menu"
+                  >
+                    <div className="px-3 py-2.5">
+                      <p className="truncate text-sm font-semibold text-white">{user?.name}</p>
+                      <p className="text-xs capitalize text-zinc-500">{user?.role} account</p>
                     </div>
-                    {links.map((link) => (
+                    <div className="my-1 h-px bg-white/5" />
+                    {links.map(({ path, label, icon: Icon }) => (
                       <Link
-                        key={link.path}
-                        to={link.path}
-                        className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-blue-600 transition-colors duration-200"
+                        key={path}
+                        to={path}
+                        className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-zinc-300 transition hover:bg-white/5 hover:text-white"
+                        role="menuitem"
                       >
-                        <span className="w-8">{link.label === 'Dashboard' ? '📊' : link.label === 'Profile' ? '👤' : '📋'}</span>
-                        {link.label}
+                        <Icon className="h-3.5 w-3.5 text-zinc-500" />
+                        {label}
                       </Link>
                     ))}
-                    <button 
-                      onClick={logout} 
-                      className="flex items-center w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors duration-200 border-t border-gray-100"
+                    <div className="my-1 h-px bg-white/5" />
+                    <button
+                      onClick={logout}
+                      className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm text-red-400 transition hover:bg-red-500/10"
+                      role="menuitem"
                     >
-                      <span className="w-8">🚪</span>
-                      Logout
+                      <FaSignOutAlt className="h-3.5 w-3.5" />
+                      Log out
                     </button>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-          
-          {/* Mobile menu button - Only visible on mobile */}
-          <div className="md:hidden ml-auto">
-            <button
-              onClick={() => setIsOpen(!isOpen)}
-              className="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-white hover:bg-gray-700 focus:outline-none"
-              aria-expanded={isOpen}
-            >
-              <span className="sr-only">Open main menu</span>
-              {/* Icon when menu is closed */}
-              <svg 
-                className={`${isOpen ? 'hidden' : 'block'} h-6 w-6`}
-                xmlns="http://www.w3.org/2000/svg" 
-                fill="none" 
-                viewBox="0 0 24 24" 
-                stroke="currentColor" 
-                aria-hidden="true"
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
-              </svg>
-              {/* Icon when menu is open */}
-              <svg 
-                className={`${isOpen ? 'block' : 'hidden'} h-6 w-6`}
-                xmlns="http://www.w3.org/2000/svg" 
-                fill="none" 
-                viewBox="0 0 24 24" 
-                stroke="currentColor" 
-                aria-hidden="true"
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Mobile menu, show/hide based on menu state. */}
-      <div className={`${isOpen ? 'block' : 'hidden'} md:hidden`} ref={dropdownRef}>
-        <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 bg-gray-800">
-          <Link to="/" className="block px-3 py-2 rounded-md text-base font-medium text-white hover:bg-gray-700">Home</Link>
-          <Link to="/about" className="block px-3 py-2 rounded-md text-base font-medium text-white hover:bg-gray-700">About</Link>
-          <Link to="/services" className="block px-3 py-2 rounded-md text-base font-medium text-white hover:bg-gray-700">Services</Link>
-          <Link to="/equipments" className="block px-3 py-2 rounded-md text-base font-medium text-white hover:bg-gray-700">Equipments</Link>
-          <Link to="/plans" className="block px-3 py-2 rounded-md text-base font-medium text-white hover:bg-gray-700">Plans</Link>
-          <Link to="/support" className="block px-3 py-2 rounded-md text-base font-medium text-white hover:bg-gray-700">Support</Link>
-          <Link to="/contact" className="block px-3 py-2 rounded-md text-base font-medium text-white hover:bg-gray-700">Contact</Link>
-        </div>
-        <div className="pt-4 pb-3 border-t border-gray-700">
-          {!isAuthenticated ? (
-            <div className="px-2 space-y-1">
-              <Link to="/login" className="block px-3 py-2 rounded-md text-base font-medium text-white bg-gray-700 hover:bg-gray-600">Login</Link>
-              <Link to="/register" className="block px-3 py-2 rounded-md text-base font-medium text-white bg-blue-600 hover:bg-blue-700">Become a Member</Link>
-            </div>
-          ) : (
-            <div className="px-2 space-y-1">
-              <div className="px-3 py-2 text-base font-bold text-gray-400">
-                {user.role} Account
-              </div>
-              {links.map((link) => (
-                <Link 
-                  key={link.path} 
-                  to={link.path} 
-                  className="block px-3 py-2 rounded-md text-base font-medium text-white hover:bg-gray-700"
-                >
-                  {link.label}
-                </Link>
-              ))}
-              <button 
-                onClick={logout}
-                className="w-full text-left block px-3 py-2 rounded-md text-base font-medium text-white bg-red-600 hover:bg-red-700"
-              >
-                Logout
-              </button>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           )}
         </div>
+
+        <button
+          onClick={() => setIsOpen((v) => !v)}
+          className="rounded-lg p-2 text-zinc-300 transition hover:bg-white/5 hover:text-white lg:hidden"
+          aria-expanded={isOpen}
+          aria-label={isOpen ? "Close menu" : "Open menu"}
+        >
+          {isOpen ? <FaTimes className="h-5 w-5" /> : <FaBars className="h-5 w-5" />}
+        </button>
       </div>
+
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            className="overflow-hidden border-t border-white/5 lg:hidden"
+          >
+            <div className="container-x space-y-1 py-4">
+              {navLinks.map((link) => (
+                <NavLink
+                  key={link.path}
+                  to={link.path}
+                  end={link.path === "/"}
+                  className={({ isActive }) =>
+                    `block rounded-lg px-3 py-2.5 text-base font-medium ${
+                      isActive ? "bg-white/5 text-white" : "text-zinc-400 hover:text-white"
+                    }`
+                  }
+                >
+                  {link.label}
+                </NavLink>
+              ))}
+              <div className="my-3 h-px bg-white/5" />
+              {!isAuthenticated ? (
+                <div className="grid grid-cols-2 gap-3 pt-1">
+                  <Link to="/login" className="btn-secondary">Log in</Link>
+                  <Link to="/register" className="btn-primary">Join now</Link>
+                </div>
+              ) : (
+                <>
+                  <p className="px-3 pb-1 text-xs uppercase tracking-widest text-zinc-500">{user?.role} account</p>
+                  {links.map(({ path, label }) => (
+                    <Link key={path} to={path} className="block rounded-lg px-3 py-2.5 text-base text-zinc-300 hover:text-white">
+                      {label}
+                    </Link>
+                  ))}
+                  <button onClick={logout} className="block w-full rounded-lg px-3 py-2.5 text-left text-base text-red-400">
+                    Log out
+                  </button>
+                </>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </nav>
   );
 }

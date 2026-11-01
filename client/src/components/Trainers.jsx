@@ -1,65 +1,78 @@
-import React from "react";
+import { motion } from "framer-motion";
+import { FaEnvelope, FaClock, FaAward } from "react-icons/fa";
+import { trainers } from "../data/site";
+import { SectionHeading } from "./ui/Section";
 
-// Trainer Data
-const trainers = [
-  {
-    id: 1,
-    name: "Enayet Hossain",
-    role: "Personal Trainer & Weight Loss Expert",
-    specialization: "Weight Loss, HIIT, Nutrition Coaching",
-    experience: "7+ years",
-    about:
-      "Enayet specializes in fat loss transformations through high-intensity workouts and personalized diet plans. His approach ensures clients stay motivated and achieve sustainable results.",
-    image: "/Enayet.jpg",
-  },
-  {
-    id: 2,
-    name: "Reza Khan",
-    role: "Strength & Conditioning Coach",
-    specialization: "Strength Training, Powerlifting, Functional Fitness",
-    experience: "8+ years",
-    about:
-      "Reza is passionate about building strength and endurance. With a background in powerlifting and functional training, he focuses on helping clients achieve peak performance.",
-    image: "/Reza.jpg",
-  },
-  {
-    id: 3,
-    name: "Srishty Das Gupta",
-    role: "Yoga & Mobility Exercise Coach",
-    specialization: "Yoga, Flexibility, Mind-Body Wellness",
-    experience: "6+ years",
-    about:
-      "Srishty combines movement and mindfulness to help clients improve flexibility, posture, and mental well-being. Her training sessions focus on balance and injury prevention.",
-    image: "/Srishty.jpg",
-  },
-];
+export function TrainerCard({ trainer, index, detailed = false, onBook }) {
+  return (
+    <motion.article
+      initial={{ opacity: 0, y: 24 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true }}
+      transition={{ duration: 0.5, delay: index * 0.1 }}
+      className="card group flex flex-col overflow-hidden"
+    >
+      <div className="relative aspect-[4/4] overflow-hidden">
+        <img
+          src={trainer.image}
+          alt={trainer.name}
+          className="h-full w-full object-cover object-top grayscale-[35%] transition duration-700 group-hover:scale-105 group-hover:grayscale-0"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-ink-850 via-transparent to-transparent" />
+        <span className="chip absolute left-4 top-4 border-brand-500/30 bg-ink-950/70 text-brand-300 backdrop-blur">
+          {trainer.experience} experience
+        </span>
+      </div>
+      <div className="flex flex-1 flex-col p-6 pt-2">
+        <h3 className="font-display text-2xl font-bold uppercase">{trainer.name}</h3>
+        <p className="mt-1 text-sm font-medium text-brand-400">{trainer.role}</p>
+        <p className="mt-4 text-sm leading-relaxed text-zinc-400">{trainer.about}</p>
+        <div className="mt-5 flex flex-wrap gap-2">
+          {trainer.specialization.map((tag) => (
+            <span key={tag} className="chip">{tag}</span>
+          ))}
+        </div>
+
+        {detailed && (
+          <>
+            <dl className="mt-6 space-y-3 border-t border-white/5 pt-6 text-sm">
+              <div className="flex gap-3">
+                <FaAward className="mt-0.5 h-4 w-4 shrink-0 text-brand-500" />
+                <dd className="text-zinc-400">{trainer.certifications}</dd>
+              </div>
+              <div className="flex gap-3">
+                <FaClock className="mt-0.5 h-4 w-4 shrink-0 text-brand-500" />
+                <dd className="text-zinc-400">{trainer.availability}</dd>
+              </div>
+              <div className="flex gap-3">
+                <FaEnvelope className="mt-0.5 h-4 w-4 shrink-0 text-brand-500" />
+                <a href={`mailto:${trainer.contact}`} className="text-zinc-300 hover:text-brand-400">{trainer.contact}</a>
+              </div>
+            </dl>
+            <button onClick={() => onBook?.(trainer)} className="btn-primary mt-6 w-full">
+              Book a session
+            </button>
+          </>
+        )}
+      </div>
+    </motion.article>
+  );
+}
 
 const Trainers = () => {
   return (
-    <section className="py-16 bg-gradient-to-r from-blue-500 via-indigo-600 to-purple-700">
-      <div className="text-center">
-        <p className="text-4xl font-extrabold text-white">Meet Our Expert Trainers</p>
-        <p className="mt-2 text-gray-200">Get guidance from the best in the industry.</p>
-      </div>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-12 mt-10 max-w-7xl mx-auto">
-        {trainers.map((trainer) => (
-          <div
-            key={trainer.id}
-            className="p-6 bg-white dark:bg-gray-800 shadow-lg rounded-lg text-center transform transition-transform hover:scale-105 hover:shadow-2xl hover:bg-gradient-to-r hover:from-purple-500 hover:to-blue-500"
-          >
-            <img
-              src={trainer.image}
-              alt={trainer.name}
-              className="w-40 h-40 mx-auto rounded-full object-cover shadow-lg transition-transform transform hover:scale-110"
-            />
-            <h4 className="text-xl font-bold text-gray-800 dark:text-white mt-4">{trainer.name}</h4>
-            <p className="text-orange-500 text-sm font-semibold">{trainer.role}</p>
-            <p className="text-gray-600 dark:text-gray-300 text-sm mt-2">{trainer.specialization}</p>
-            <p className="text-gray-500 dark:text-gray-400 text-sm mt-2">{trainer.experience} Experience</p>
-            <p className="mt-4 text-gray-700 dark:text-gray-300 text-sm">{trainer.about}</p>
-          </div>
-        ))}
+    <section className="section bg-ink-900">
+      <div className="container-x">
+        <SectionHeading
+          eyebrow="Our coaches"
+          title="Meet your expert trainers"
+          description="Certified professionals who bring years of experience and a lot of energy to every session."
+        />
+        <div className="mt-14 grid gap-6 md:grid-cols-3">
+          {trainers.map((trainer, i) => (
+            <TrainerCard key={trainer.id} trainer={trainer} index={i} />
+          ))}
+        </div>
       </div>
     </section>
   );

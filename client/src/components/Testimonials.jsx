@@ -1,57 +1,81 @@
-import { Swiper, SwiperSlide } from "swiper/react";
-import "swiper/css";
-import "swiper/css/pagination";
-import { Pagination } from "swiper/modules";
+import { Link } from "react-router-dom";
+import { motion } from "framer-motion";
+import { FaQuoteLeft, FaStar, FaArrowRight } from "react-icons/fa";
+import { testimonials } from "../data/site";
+import { SectionHeading } from "./ui/Section";
 
 function Testimonials() {
-  const testimonials = [
-    {
-      name: "John Doe",
-      review: "FitSync changed my life! I lost 15kg in 3 months.",
-      image: "/images/john.jpg", // Image path
-    },
-    {
-      name: "Emily Smith",
-      review: "The trainers here are amazing and very motivating!",
-      image: "/images/emily.jpg", // Image path
-    },
-    {
-      name: "Michael Lee",
-      review: "Best gym ever! The group workouts are fun.",
-      image: "/images/michael.jpg", // Image path
-    },
-  ];
-
   return (
-    <section className="py-16 bg-gradient-to-r from-blue-500 to-indigo-600 text-center text-white">
-      <h2 className="text-4xl font-extrabold mb-10">What Our Clients Say</h2>
-      <Swiper
-        modules={[Pagination]}
-        spaceBetween={30}
-        slidesPerView={1}
-        pagination={{ clickable: true }}
-        loop={true} // Added loop for infinite scroll
-        className="mt-8 w-11/12 sm:w-3/4 lg:w-2/3 mx-auto"
-      >
-        {testimonials.map((testimonial, index) => (
-          <SwiperSlide
-            key={index}
-            className="p-8 bg-white text-gray-800 rounded-xl shadow-2xl transition-transform duration-300 hover:scale-105"
+    <>
+      <section className="section bg-ink-900">
+        <div className="container-x">
+          <SectionHeading
+            eyebrow="Testimonials"
+            title="Real people. Real results."
+            description="Hear from members who changed their routine and their lives with FitSync."
+          />
+          <div className="mt-14 grid gap-6 md:grid-cols-3">
+            {testimonials.map((t, index) => (
+              <motion.figure
+                key={t.name}
+                initial={{ opacity: 0, y: 24 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5, delay: index * 0.1 }}
+                className="card flex flex-col p-8"
+              >
+                <div className="flex items-center justify-between">
+                  <FaQuoteLeft className="h-7 w-7 text-brand-500/40" />
+                  <div className="flex gap-0.5 text-amber-400">
+                    {Array.from({ length: 5 }).map((_, i) => (
+                      <FaStar key={i} className="h-3.5 w-3.5" />
+                    ))}
+                  </div>
+                </div>
+                <blockquote className="mt-6 flex-1 text-base leading-relaxed text-zinc-200">
+                  &ldquo;{t.review}&rdquo;
+                </blockquote>
+                <figcaption className="mt-8 flex items-center gap-3 border-t border-white/5 pt-6">
+                  <span className="flex h-11 w-11 items-center justify-center rounded-full bg-gradient-to-br from-brand-400 to-brand-700 font-semibold text-white">
+                    {t.name.split(" ").map((n) => n[0]).join("")}
+                  </span>
+                  <span>
+                    <span className="block text-sm font-semibold text-white">{t.name}</span>
+                    <span className="block text-xs text-zinc-500">{t.title}</span>
+                  </span>
+                </figcaption>
+              </motion.figure>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="section">
+        <div className="container-x">
+          <motion.div
+            initial={{ opacity: 0, y: 24 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="relative overflow-hidden rounded-3xl border border-white/10 px-8 py-16 text-center sm:px-16"
           >
-            {/* Image */}
-            <div className="flex justify-center mb-4">
-              <img
-                src={testimonial.image}
-                alt={testimonial.name}
-                className="w-24 h-24 rounded-full object-cover shadow-lg"
-              />
+            <img src="/Hero.jpg" alt="" aria-hidden="true" className="absolute inset-0 h-full w-full object-cover opacity-30" />
+            <div className="absolute inset-0 bg-gradient-to-br from-brand-600/80 via-ink-950/80 to-ink-950" />
+            <div className="relative mx-auto max-w-2xl">
+              <h2 className="heading-lg">Your first step starts today</h2>
+              <p className="lead mt-4 text-zinc-300">
+                Create a free account, check your BMI and pick a plan. We&apos;ll handle the rest.
+              </p>
+              <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
+                <Link to="/register" className="btn-primary px-8 py-4">
+                  Become a member <FaArrowRight className="h-3 w-3" />
+                </Link>
+                <Link to="/bmicalculator" className="btn-secondary px-8 py-4">Check your BMI</Link>
+              </div>
             </div>
-            <p className="text-lg italic text-gray-600 mb-4">"{testimonial.review}"</p>
-            <h3 className="text-2xl font-semibold text-blue-600">{testimonial.name}</h3>
-          </SwiperSlide>
-        ))}
-      </Swiper>
-    </section>
+          </motion.div>
+        </div>
+      </section>
+    </>
   );
 }
 
