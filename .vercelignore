@@ -1,0 +1,8 @@
+# Never upload secrets, local databases or installed packages
+**/.env
+**/.env.*
+!**/.env.example
+**/node_modules
+server/.data
+**/dist
+.neon

@@ -1,0 +1,5 @@
+.neon
+
+.vercel
+.env*
+!.env.example
